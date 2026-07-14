@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inmuebles Montevideo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161c2c; --panel2:#1d2436; --border:#2a3247;
+    --text:#e8ecf4; --muted:#8b93a7; --accent:#4f8cff; --accent2:#63d3a6;
+    --danger:#ff6b6b; --warn:#ffb84f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  header h1{font-size:20px;margin:0;font-weight:600;}
+  header .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+  .cards{display:flex;gap:12px;padding:20px 28px 0;flex-wrap:wrap;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px;min-width:130px;flex:1;}
+  .card .n{font-size:24px;font-weight:700;}
+  .card .l{font-size:12px;color:var(--muted);margin-top:2px;}
+  .card.nuevo .n{color:var(--accent2);}
+  .card.baja .n{color:var(--danger);}
+  .layout{display:grid;grid-template-columns:260px 1fr;gap:20px;padding:20px 28px;align-items:start;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+  .filters{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;position:sticky;top:16px;}
+  .filters h3{margin:0 0 12px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .fgroup{margin-bottom:14px;}
+  .fgroup label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
+  select, input[type=text], input[type=number]{
+    width:100%;padding:8px 10px;background:var(--panel2);border:1px solid var(--border);
+    border-radius:6px;color:var(--text);font-size:13px;
+  }
+  .range{display:flex;gap:6px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{padding:5px 10px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;color:var(--muted);user-select:none;}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .reset{width:100%;padding:8px;margin-top:6px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px;}
+  .reset:hover{border-color:var(--accent);color:var(--text);}
+  .main{min-width:0;}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap;}
+  .toolbar input[type=text]{max-width:320px;}
+  .count{color:var(--muted);font-size:13px;}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px;}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;cursor:pointer;white-space:nowrap;font-size:12px;text-transform:uppercase;letter-spacing:.03em;}
+  th:hover{color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#1a2133;}
+  a.rowlink{color:var(--accent);text-decoration:none;}
+  a.rowlink:hover{text-decoration:underline;}
+  .badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+  .badge.Nuevo{background:rgba(99,211,166,.15);color:var(--accent2);}
+  .badge.Mantenido{background:rgba(79,140,255,.15);color:var(--accent);}
+  .badge.Baja{background:rgba(255,107,107,.15);color:var(--danger);}
+  .portalpill{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);border:1px solid var(--border);}
+  .chart-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;}
+  .empty{padding:40px;text-align:center;color:var(--muted);}
+  .pager{display:flex;gap:8px;justify-content:center;margin-top:14px;}
+  .pager button{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+  .pager button:disabled{opacity:.4;cursor:default;}
+  footer{padding:20px 28px;color:var(--muted);font-size:12px;text-align:center;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Inmuebles Montevideo</h1>
+    <div class="sub">Venta y alquiler &middot; InfoCasas, Gallito y MercadoLibre &middot; actualizado: <span id="fechaActualizado">-</span></div>
+  </div>
+</header>
+
+<div class="cards">
+  <div class="card"><div class="n" id="cActivos">-</div><div class="l">avisos activos</div></div>
+  <div class="card nuevo"><div class="n" id="cNuevos">-</div><div class="l">nuevos (última corrida)</div></div>
+  <div class="card"><div class="n" id="cMantenidos">-</div><div class="l">se mantienen</div></div>
+  <div class="card baja"><div class="n" id="cBajas">-</div><div class="l">bajas (última corrida)</div></div>
+</div>
+
+<div class="layout">
+  <aside class="filters">
+    <h3>Filtros</h3>
+
+    <div class="fgroup">
+      <label>Operación</label>
+      <div class="chips" id="fOperacion">
+        <div class="chip active" data-val="">Todas</div>
+        <div class="chip" data-val="venta">Venta</div>
+        <div class="chip" data-val="alquiler">Alquiler</div>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label>Portal</label>
+      <div class="chips" id="fPortal">
+        <div class="chip active" data-val="">Todos</div>
+        <div class="chip" data-val="InfoCasas">InfoCasas</div>
+        <div class="chip" data-val="Gallito">Gallito</div>
+        <div class="chip" data-val="MercadoLibre">MercadoLibre</div>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label>Estado</label>
+      <div class="chips" id="fEstado">
+        <div class="chip active" data-val="">Todos</div>
+        <div class="chip" data-val="Nuevo">Nuevo</div>
+        <div class="chip" data-val="Mantenido">Mantenido</div>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label>Tipo de inmueble</label>
+      <select id="fTipo"><option value="">Todos</option></select>
+    </div>
+
+    <div class="fgroup">
+      <label>Barrio</label>
+      <select id="fBarrio"><option value="">Todos</option></select>
+    </div>
+
+    <div class="fgroup">
+      <label>Dormitorios</label>
+      <select id="fDorm">
+        <option value="">Todos</option>
+        <option value="0">Monoambiente</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4+">4 o más</option>
+      </select>
+    </div>
+
+    <div class="fgroup">
+      <label>Precio (USD aprox.)</label>
+      <div class="range">
+        <input type="number" id="fPrecioMin" placeholder="Mín">
+        <input type="number" id="fPrecioMax" placeholder="Máx">
+      </div>
+    </div>
+
+    <button class="reset" id="btnReset">Limpiar filtros</button>
+  </aside>
+
+  <div class="main">
+    <div class="chart-wrap">
+      <canvas id="chartHist" height="70"></canvas>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="fBuscar" placeholder="Buscar por título o dirección...">
+      <div class="count" id="resultCount">-</div>
+    </div>
+
+    <div id="tableWrap"></div>
+    <div class="pager" id="pager"></div>
+  </div>
+</div>
+
+<footer>Datos de InfoCasas, Gallito y MercadoLibre &middot; uso personal &middot; se actualiza automáticamente cada semana</footer>
+
+<script>
+let DATA = {listado: [], historico: [], actualizado: '', resumen_ultima_corrida: {}};
+let sortKey = 'ultima_vez_visto', sortDir = -1;
+let page = 1;
+const PAGE_SIZE = 40;
+
+const state = { operacion: '', portal: '', estado: '', tipo: '', barrio: '', dorm: '', pmin: '', pmax: '', q: '' };
+
+function fmtPrice(row){
+  if(!row.precio_valor) return '-';
+  const sym = row.precio_moneda === 'USD' ? 'US$' : '$';
+  const n = Number(row.precio_valor);
+  return sym + ' ' + (isNaN(n) ? row.precio_valor : n.toLocaleString('es-UY'));
+}
+
+function populateSelect(id, values){
+  const sel = document.getElementById(id);
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+
+function matchesDorm(row){
+  if(!state.dorm) return true;
+  const d = parseInt(row.dormitorios, 10);
+  if(isNaN(d)) return false;
+  if(state.dorm === '4+') return d >= 4;
+  return d === parseInt(state.dorm, 10);
+}
+
+function applyFilters(){
+  return DATA.listado.filter(r => {
+    if(state.operacion && r.operacion !== state.operacion) return false;
+    if(state.portal && r.portal !== state.portal) return false;
+    if(state.estado && r.estado !== state.estado) return false;
+    if(state.tipo && r.tipo_inmueble !== state.tipo) return false;
+    if(state.barrio && r.barrio !== state.barrio) return false;
+    if(!matchesDorm(r)) return false;
+    if(state.pmin && Number(r.precio_valor || 0) < Number(state.pmin)) return false;
+    if(state.pmax && Number(r.precio_valor || 0) > Number(state.pmax)) return false;
+    if(state.q){
+      const hay = (r.titulo + ' ' + r.barrio).toLowerCase();
+      if(!hay.includes(state.q.toLowerCase())) return false;
+    }
+    return true;
+  });
+}
+
+function sortRows(rows){
+  return rows.sort((a,b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if(sortKey === 'precio_valor' || sortKey === 'dormitorios' || sortKey === 'banos' || sortKey === 'm2'){
+      va = Number(va) || 0; vb = Number(vb) || 0;
+    }
+    if(va < vb) return -1 * sortDir;
+    if(va > vb) return 1 * sortDir;
+    return 0;
+  });
+}
+
+function render(){
+  const filtered = sortRows(applyFilters());
+  document.getElementById('resultCount').textContent = filtered.length + ' resultados';
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if(page > totalPages) page = totalPages;
+  const start = (page - 1) * PAGE_SIZE;
+  const pageRows = filtered.slice(start, start + PAGE_SIZE);
+
+  const cols = [
+    ['portal','Portal'], ['operacion','Op.'], ['tipo_inmueble','Tipo'], ['barrio','Barrio'],
+    ['dormitorios','Dorm'], ['banos','Baños'], ['m2','m²'], ['precio_valor','Precio'],
+    ['estado','Estado'], ['ultima_vez_visto','Visto']
+  ];
+
+  let html = '<table><thead><tr>';
+  cols.forEach(([key,label]) => {
+    html += `<th data-key="${key}">${label}${sortKey===key ? (sortDir===1?' ▲':' ▼') : ''}</th>`;
+  });
+  html += '<th>Aviso</th></tr></thead><tbody>';
+
+  if(pageRows.length === 0){
+    html += `<tr><td colspan="${cols.length+1}"><div class="empty">Sin resultados con estos filtros</div></td></tr>`;
+  }
+
+  pageRows.forEach(r => {
+    html += '<tr>';
+    html += `<td><span class="portalpill">${r.portal}</span></td>`;
+    html += `<td>${r.operacion}</td>`;
+    html += `<td>${r.tipo_inmueble || '-'}</td>`;
+    html += `<td>${r.barrio || '-'}</td>`;
+    html += `<td>${r.dormitorios || '-'}</td>`;
+    html += `<td>${r.banos || '-'}</td>`;
+    html += `<td>${r.m2 || '-'}</td>`;
+    html += `<td>${fmtPrice(r)}</td>`;
+    html += `<td><span class="badge ${r.estado}">${r.estado}</span></td>`;
+    html += `<td>${r.ultima_vez_visto || '-'}</td>`;
+    html += `<td><a class="rowlink" href="${r.url}" target="_blank" rel="noopener">Ver &rarr;</a></td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableWrap').innerHTML = html;
+
+  document.querySelectorAll('th[data-key]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if(sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+      render();
+    });
+  });
+
+  const pager = document.getElementById('pager');
+  pager.innerHTML = `
+    <button ${page<=1?'disabled':''} id="prevPage">&larr; Anterior</button>
+    <span style="align-self:center;font-size:12px;color:var(--muted)">Página ${page} de ${totalPages}</span>
+    <button ${page>=totalPages?'disabled':''} id="nextPage">Siguiente &rarr;</button>
+  `;
+  const prevBtn = document.getElementById('prevPage');
+  const nextBtn = document.getElementById('nextPage');
+  if(prevBtn) prevBtn.addEventListener('click', () => { page--; render(); });
+  if(nextBtn) nextBtn.addEventListener('click', () => { page++; render(); });
+}
+
+function setupChips(containerId, stateKey){
+  document.querySelectorAll(`#${containerId} .chip`).forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll(`#${containerId} .chip`).forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      state[stateKey] = chip.dataset.val;
+      page = 1;
+      render();
+    });
+  });
+}
+
+function renderChart(){
+  const byDate = {};
+  DATA.historico.forEach(h => {
+    if(!byDate[h.fecha]) byDate[h.fecha] = {nuevos_venta:0, nuevos_alquiler:0, activos_venta:0, activos_alquiler:0};
+    const d = byDate[h.fecha];
+    if(h.operacion === 'venta'){ d.nuevos_venta += h.nuevos; d.activos_venta += h.total_activos; }
+    if(h.operacion === 'alquiler'){ d.nuevos_alquiler += h.nuevos; d.activos_alquiler += h.total_activos; }
+  });
+  const fechas = Object.keys(byDate).sort();
+  const ctx = document.getElementById('chartHist');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: fechas,
+      datasets: [
+        { label: 'Activos - Venta', data: fechas.map(f=>byDate[f].activos_venta), borderColor:'#4f8cff', backgroundColor:'rgba(79,140,255,.1)', tension:.3 },
+        { label: 'Activos - Alquiler', data: fechas.map(f=>byDate[f].activos_alquiler), borderColor:'#63d3a6', backgroundColor:'rgba(99,211,166,.1)', tension:.3 },
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{ legend:{ labels:{ color:'#e8ecf4' } } },
+      scales:{
+        x:{ ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } },
+        y:{ ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } }
+      }
+    }
+  });
+}
+
+async function init(){
+  const res = await fetch('data.json?_=' + Date.now());
+  DATA = await res.json();
+
+  document.getElementById('fechaActualizado').textContent = DATA.actualizado;
+  document.getElementById('cActivos').textContent = DATA.total_activos;
+  document.getElementById('cNuevos').textContent = DATA.resumen_ultima_corrida.nuevos ?? 0;
+  document.getElementById('cMantenidos').textContent = DATA.resumen_ultima_corrida.mantenidos ?? 0;
+  document.getElementById('cBajas').textContent = DATA.resumen_ultima_corrida.bajas ?? 0;
+
+  const tipos = [...new Set(DATA.listado.map(r=>r.tipo_inmueble).filter(Boolean))].sort();
+  const barrios = [...new Set(DATA.listado.map(r=>r.barrio).filter(Boolean))].sort();
+  populateSelect('fTipo', tipos);
+  populateSelect('fBarrio', barrios);
+
+  document.getElementById('fTipo').addEventListener('change', e => { state.tipo = e.target.value; page=1; render(); });
+  document.getElementById('fBarrio').addEventListener('change', e => { state.barrio = e.target.value; page=1; render(); });
+  document.getElementById('fDorm').addEventListener('change', e => { state.dorm = e.target.value; page=1; render(); });
+  document.getElementById('fPrecioMin').addEventListener('input', e => { state.pmin = e.target.value; page=1; render(); });
+  document.getElementById('fPrecioMax').addEventListener('input', e => { state.pmax = e.target.value; page=1; render(); });
+  document.getElementById('fBuscar').addEventListener('input', e => { state.q = e.target.value; page=1; render(); });
+
+  setupChips('fOperacion', 'operacion');
+  setupChips('fPortal', 'portal');
+  setupChips('fEstado', 'estado');
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    Object.keys(state).forEach(k => state[k] = '');
+    document.getElementById('fTipo').value = '';
+    document.getElementById('fBarrio').value = '';
+    document.getElementById('fDorm').value = '';
+    document.getElementById('fPrecioMin').value = '';
+    document.getElementById('fPrecioMax').value = '';
+    document.getElementById('fBuscar').value = '';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.chip[data-val=""]').forEach(c => c.classList.add('active'));
+    page = 1;
+    render();
+  });
+
+  renderChart();
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
