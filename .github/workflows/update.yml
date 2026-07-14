@@ -2,7 +2,7 @@ name: Actualizar inmuebles Montevideo
 
 on:
   schedule:
-    - cron: "0 11 * * 1"
+    - cron: "0 13 * * 1"
   workflow_dispatch: {}
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   actualizar:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Clonar repo
         uses: actions/checkout@v4
@@ -23,7 +23,11 @@ jobs:
       - name: Instalar dependencias
         run: |
           pip install -r requirements.txt
-          python -m playwright install --with-deps chromium
+          python -m playwright install chromium
+
+      - name: Crear carpeta data
+        shell: bash
+        run: mkdir -p data
 
       - name: Descargar InfoCasas y Gallito
         run: python scraper.py --out data/raw_infocasas_gallito.csv --paginas 5
@@ -33,6 +37,7 @@ jobs:
         run: python scraper_ml.py --out data/raw_mercadolibre.csv --paginas 3
 
       - name: Procesar y actualizar data.json
+        shell: bash
         run: |
           FECHA=$(date +'%Y-%m-%d')
           if [ -f data/raw_mercadolibre.csv ]; then
@@ -42,6 +47,7 @@ jobs:
           fi
 
       - name: Commitear cambios
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
