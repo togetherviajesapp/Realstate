@@ -386,4 +386,51 @@ async function init(){
   DATA = await res.json();
 
   document.getElementById('fechaActualizado').textContent = DATA.actualizado;
-  document.getElementById('cActivos').textContent = DATA.t
+  document.getElementById('cActivos').textContent = DATA.total_activos;
+  document.getElementById('cNuevos').textContent = DATA.resumen_ultima_corrida.nuevos ?? 0;
+  document.getElementById('cMantenidos').textContent = DATA.resumen_ultima_corrida.mantenidos ?? 0;
+  document.getElementById('cBajas').textContent = DATA.resumen_ultima_corrida.bajas ?? 0;
+
+  const tipos = [...new Set(DATA.listado.map(r=>r.tipo_inmueble).filter(Boolean))].sort();
+  const barrios = [...new Set(DATA.listado.map(r=>r.barrio).filter(Boolean))].sort();
+  setupMultiSelect('fTipo', 'tipo', tipos);
+  setupMultiSelect('fBarrio', 'barrio', barrios);
+
+  document.getElementById('fDorm').addEventListener('change', e => { state.dorm = e.target.value; page=1; render(); });
+  document.getElementById('fPrecioMin').addEventListener('input', e => { state.pmin = e.target.value; page=1; render(); });
+  document.getElementById('fPrecioMax').addEventListener('input', e => { state.pmax = e.target.value; page=1; render(); });
+  document.getElementById('fBuscar').addEventListener('input', e => { state.q = e.target.value; page=1; render(); });
+
+  setupChips('fOperacion', 'operacion');
+  setupChips('fPortal', 'portal');
+  setupChips('fEstado', 'estado');
+  setupChips('fMoneda', 'moneda');
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    state.operacion = ''; state.portal = ''; state.estado = ''; state.moneda = '';
+    state.tipo = []; state.barrio = []; state.dorm = ''; state.pmin = ''; state.pmax = ''; state.q = '';
+    document.querySelectorAll('#fTipo input[type=checkbox], #fBarrio input[type=checkbox]').forEach(cb => cb.checked = false);
+    updateMselLabel(document.querySelector('#fTipo .msel-btn'), []);
+    updateMselLabel(document.querySelector('#fBarrio .msel-btn'), []);
+    document.getElementById('fDorm').value = '';
+    document.getElementById('fPrecioMin').value = '';
+    document.getElementById('fPrecioMax').value = '';
+    document.getElementById('fBuscar').value = '';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.chip[data-val=""]').forEach(c => c.classList.add('active'));
+    page = 1;
+    render();
+  });
+
+  try { renderChart(); } catch(e) { console.error('Error dibujando el grafico:', e); }
+  render();
+}
+
+init().catch(e => {
+  console.error(e);
+  document.getElementById('tableWrap').innerHTML =
+    '<div class="empty">Hubo un error cargando los datos: ' + e.message + '</div>';
+});
+</script>
+</body>
+</html>
