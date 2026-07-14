@@ -1,0 +1,50 @@
+name: Actualizar inmuebles Montevideo
+
+on:
+  schedule:
+    - cron: "0 11 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Descargar InfoCasas y Gallito
+        run: python scraper.py --out data/raw_infocasas_gallito.csv --paginas 5
+
+      - name: Descargar MercadoLibre
+        continue-on-error: true
+        run: python scraper_ml.py --out data/raw_mercadolibre.csv --paginas 3
+
+      - name: Procesar y actualizar data.json
+        run: |
+          FECHA=$(date +'%Y-%m-%d')
+          if [ -f data/raw_mercadolibre.csv ]; then
+            python process.py --csvs data/raw_infocasas_gallito.csv data/raw_mercadolibre.csv --data data.json --fecha "$FECHA"
+          else
+            python process.py --csvs data/raw_infocasas_gallito.csv --data data.json --fecha "$FECHA"
+          fi
+
+      - name: Commitear cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json data/
+          git diff --quiet --cached || git commit -m "Actualizacion semanal de inmuebles $(date +'%Y-%m-%d')"
+          git push
