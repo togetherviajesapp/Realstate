@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 Scraper de InfoCasas y Gallito para Montevideo (venta + alquiler).
-Pensado para correr en GitHub Actions (tiene internet real, sin restricciones de proxy).
+
+InfoCasas se descarga con pedidos HTTP normales (requests).
+Gallito bloquea los pedidos HTTP normales (error 403 con Cloudflare, tanto
+desde servidores de GitHub como desde una conexion residencial), asi que se
+descarga con un navegador real headless (Playwright), igual que MercadoLibre.
 
 Uso:
     python scraper.py --out data/raw_infocasas_gallito.csv --paginas 5
@@ -9,34 +13,100 @@ Uso:
 import argparse
 import csv
 import os
+import random
 import re
 import sys
 import time
 
 import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-    "Accept-Language": "es-UY,es;q=0.9",
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+
+BASE_HEADERS = {
+    "User-Agent": UA,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0",
 }
+
+# se ejecuta en el navegador antes de que cargue cualquier pagina: intenta
+# ocultar las señales mas obvias de que es un navegador automatizado
+STEALTH_JS = """
+Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+Object.defineProperty(navigator, 'languages', { get: () => ['es-UY', 'es'] });
+Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+window.chrome = window.chrome || { runtime: {} };
+"""
 
 TIPOS = ["Apartamento", "Casa", "Oficina", "Local Comercial", "Local", "Terreno",
          "Garage", "Chacra", "Edificio", "Galpón", "Piso", "Pieza", "Cochera"]
 TIPO_RE = "|".join(re.escape(t) for t in TIPOS)
 
+GALLITO_BASE = {
+    "venta": "https://www.gallito.com.uy/inmuebles/venta/montevideo",
+    "alquiler": "https://www.gallito.com.uy/inmuebles/alquiler/montevideo",
+}
 
-def fetch(url, retries=3):
+# ---------------------------------------------------------------------------
+# InfoCasas (requests normales — este portal no bloquea)
+# ---------------------------------------------------------------------------
+
+# una sesion por dominio para reutilizar cookies (ayuda contra bloqueos tipo
+# Cloudflare que exigen una cookie de "challenge" obtenida en la home antes de
+# dejar pasar a paginas internas)
+_sessions = {}
+_warmed = set()
+
+
+def _session_for(url):
+    from urllib.parse import urlparse
+    host = urlparse(url).netloc
+    if host not in _sessions:
+        s = requests.Session()
+        s.headers.update(BASE_HEADERS)
+        _sessions[host] = s
+    return _sessions[host], host
+
+
+def _warmup(session, host):
+    """Visita la home del sitio una vez por corrida para conseguir cookies
+    antes de pedir paginas internas (asi el pedido no parece 'en frio')."""
+    if host in _warmed:
+        return
+    _warmed.add(host)
+    try:
+        session.get(f"https://{host}/", timeout=20)
+        time.sleep(1)
+    except requests.RequestException:
+        pass
+
+
+def fetch(url, retries=4, referer=None):
+    session, host = _session_for(url)
+    _warmup(session, host)
+    headers = {}
+    if referer:
+        headers["Referer"] = referer
     for i in range(retries):
         try:
-            r = requests.get(url, headers=HEADERS, timeout=25)
+            r = session.get(url, headers=headers, timeout=25)
             if r.status_code == 200:
                 return r.text
             print(f"  [warn] {url} -> HTTP {r.status_code}", file=sys.stderr)
         except requests.RequestException as e:
             print(f"  [warn] {url} -> {e}", file=sys.stderr)
-        time.sleep(2)
+        # backoff creciente + jitter, mas cortes que un sleep fijo
+        time.sleep(2 * (i + 1) + random.uniform(0, 1.5))
     return None
 
 
@@ -82,62 +152,155 @@ def parse_infocasas(html, operacion):
     return rows
 
 
-def parse_gallito(html, operacion):
-    """Gallito: cada aviso tiene un <a> con href tipo .../inmuebles-<digitos>.
-    El precio suele estar en un elemento hermano/cercano con U$S o $."""
-    soup = BeautifulSoup(html, "html.parser")
+def collect(base_url, paginas, pagina_fmt, parser, operacion, sleep=1.5):
     rows = []
-    seen = set()
-    for a in soup.find_all("a", href=re.compile(r"-inmuebles-\d+")):
-        href = a.get("href", "")
-        if not href.startswith("http"):
-            href = "https://www.gallito.com.uy" + href
-        if href in seen or not a.get_text(strip=True):
+    referer = None
+    for p in range(1, paginas + 1):
+        url = base_url if p == 1 else pagina_fmt.format(base=base_url, p=p)
+        print(f"  fetching {url}", file=sys.stderr)
+        html = fetch(url, referer=referer)
+        referer = url
+        if not html:
             continue
-        titulo = a.get_text(" ", strip=True)
-        # buscar precio en el contenedor padre (hasta 3 niveles arriba)
-        container = a
-        precio_text = ""
-        for _ in range(4):
-            if container.parent is None:
+        page_rows = parser(html, operacion)
+        print(f"    -> {len(page_rows)} avisos", file=sys.stderr)
+        rows.extend(page_rows)
+        time.sleep(sleep + random.uniform(0, 1))
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Gallito (via navegador real — este portal bloquea requests normales con 403)
+# ---------------------------------------------------------------------------
+
+def extract_gallito_cards(page):
+    """Extrae los avisos visibles en la pagina actual usando el DOM.
+    Estructura confirmada en vivo (julio 2026):
+      <article> (con un <a href*="-inmuebles-">)
+        .contenedor-info
+          div
+            p       -> "Casas en Aguada"        (tipo plural + " en " + barrio)
+            strong  -> "108.000"  (con <span> adentro = moneda, ej "U$S")
+          .mas-info
+            a
+              span  -> "3 Dormitorios" (puede faltar, ej. oficinas)
+              h2    -> "Casa en Venta" / "Apartamento en Venta - Villa Española"
+    """
+    return page.evaluate(
+        """
+        () => {
+            function clean(u) { return u ? u.split('?')[0].split('#')[0] : ''; }
+            const articles = Array.from(document.querySelectorAll('article'));
+            const cards = articles.filter(a => a.querySelector('a[href*="-inmuebles-"]'));
+            const out = [];
+            cards.forEach(card => {
+                const linkEl = card.querySelector('a[href*="-inmuebles-"]');
+                const href = clean(linkEl ? linkEl.href : '');
+                const info = card.querySelector('.contenedor-info');
+                if (!info) return;
+                const firstDiv = info.children[0];
+                const p = firstDiv ? firstDiv.querySelector('p') : null;
+                const strong = firstDiv ? firstDiv.querySelector('strong') : null;
+                const currSpan = strong ? strong.querySelector('span') : null;
+                const masInfo = info.querySelector('.mas-info');
+                const dormSpan = masInfo ? masInfo.querySelector('a > span') : null;
+                const h2 = masInfo ? masInfo.querySelector('a > h2') : null;
+                let precioText = '';
+                if (strong) {
+                    precioText = Array.from(strong.childNodes)
+                        .filter(n => n.nodeType === 3)
+                        .map(n => n.textContent.trim())
+                        .join(' ').trim();
+                }
+                out.push({
+                    href,
+                    barrio_tipo: p ? p.textContent.trim() : '',
+                    precio: precioText,
+                    moneda: currSpan ? currSpan.textContent.trim() : '',
+                    dorm_text: dormSpan ? dormSpan.textContent.trim() : '',
+                    titulo: h2 ? h2.textContent.trim() : ''
+                });
+            });
+            return out;
+        }
+        """
+    )
+
+
+def parse_gallito_items(items, operacion):
+    rows = []
+    for it in items:
+        href = it.get("href") or ""
+        if not href:
+            continue
+        barrio_tipo = it.get("barrio_tipo") or ""
+        m = re.match(r"^(.*?)\s+en\s+(.+)$", barrio_tipo)
+        tipo_plural = m.group(1).strip() if m else ""
+        barrio = m.group(2).strip() if m else ""
+        tipo = ""
+        for t in TIPOS:
+            singular = t.lower().rstrip("s")
+            if singular and singular in tipo_plural.lower():
+                tipo = t
                 break
-            container = container.parent
-            t = container.get_text(" ", strip=True)
-            m = re.search(r"(U\$S|US\$|\$)\s*([\d.,]+)", t)
-            if m:
-                precio_text = m.group(0)
-                break
-        m_precio = re.search(r"(U\$S|US\$|\$)\s*([\d.,]+)", precio_text)
-        moneda = "USD" if m_precio and m_precio.group(1) in ("U$S", "US$") else ("UYU" if m_precio else "")
-        precio = m_precio.group(2).replace(".", "") if m_precio else ""
-        m_dorm = re.search(r"(\d+)\s*Dormitorios?", titulo, re.I)
-        dorm = m_dorm.group(1) if m_dorm else ""
-        m_tipo = re.search(rf"({TIPO_RE})", titulo, re.I)
-        tipo = m_tipo.group(1).capitalize() if m_tipo else ""
-        m_barrio = re.search(r"\ben\s+([A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ. ]+)$", titulo)
-        barrio = m_barrio.group(1).strip() if m_barrio else ""
-        seen.add(href)
+        titulo = it.get("titulo") or barrio_tipo
+        precio_raw = it.get("precio") or ""
+        precio = re.sub(r"\D", "", precio_raw)
+        moneda_raw = it.get("moneda") or ""
+        moneda = "USD" if ("U$S" in moneda_raw or "US$" in moneda_raw) else ("UYU" if moneda_raw else "")
+        dorm_text = it.get("dorm_text") or ""
+        m_dorm = re.search(r"(\d+)", dorm_text)
+        dorm = m_dorm.group(1) if m_dorm else ("0" if "mono" in dorm_text.lower() else "")
         rows.append({
             "portal": "Gallito", "operacion": operacion, "url": href,
             "titulo": titulo, "tipo_inmueble": tipo, "barrio": barrio,
             "precio_moneda": moneda, "precio_valor": precio, "gastos_comunes": "",
             "dormitorios": dorm, "banos": "", "m2": "",
         })
-    return rows
+    # dedup por url dentro de esta tanda (una pagina puede repetir avisos destacados)
+    dedup = {}
+    for r in rows:
+        dedup[r["url"]] = r
+    return list(dedup.values())
 
 
-def collect(base_url, paginas, pagina_fmt, parser, operacion, sleep=1.5):
+def collect_gallito_playwright(paginas):
     rows = []
-    for p in range(1, paginas + 1):
-        url = base_url if p == 1 else pagina_fmt.format(base=base_url, p=p)
-        print(f"  fetching {url}", file=sys.stderr)
-        html = fetch(url)
-        if not html:
-            continue
-        page_rows = parser(html, operacion)
-        print(f"    -> {len(page_rows)} avisos", file=sys.stderr)
-        rows.extend(page_rows)
-        time.sleep(sleep)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-dev-shm-usage",
+            ],
+        )
+        context = browser.new_context(
+            user_agent=UA,
+            locale="es-UY",
+            viewport={"width": 1366, "height": 900},
+            extra_http_headers={
+                "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
+            },
+        )
+        context.add_init_script(STEALTH_JS)
+        page = context.new_page()
+
+        for operacion, base in GALLITO_BASE.items():
+            for n in range(1, paginas + 1):
+                url = base if n == 1 else f"{base}?pag={n}"
+                print(f"  fetching {url}", file=sys.stderr)
+                try:
+                    page.goto(url, timeout=45000, wait_until="domcontentloaded")
+                    page.wait_for_selector('a[href*="-inmuebles-"]', timeout=25000)
+                except Exception as e:
+                    print(f"  [warn] {url} -> {e}", file=sys.stderr)
+                    continue
+                items = extract_gallito_cards(page)
+                page_rows = parse_gallito_items(items, operacion)
+                print(f"    -> {len(page_rows)} avisos", file=sys.stderr)
+                rows.extend(page_rows)
+                time.sleep(1.5)
+        browser.close()
     return rows
 
 
@@ -159,15 +322,8 @@ def main():
         "https://www.infocasas.com.uy/alquiler/inmuebles/montevideo", args.paginas,
         "{base}/pagina{p}", parse_infocasas, "alquiler")
 
-    print("Gallito venta...", file=sys.stderr)
-    all_rows += collect(
-        "https://www.gallito.com.uy/inmuebles/venta/montevideo", args.paginas,
-        "{base}?pag={p}", parse_gallito, "venta")
-
-    print("Gallito alquiler...", file=sys.stderr)
-    all_rows += collect(
-        "https://www.gallito.com.uy/inmuebles/alquiler/montevideo", args.paginas,
-        "{base}?pag={p}", parse_gallito, "alquiler")
+    print("Gallito (venta + alquiler, via navegador)...", file=sys.stderr)
+    all_rows += collect_gallito_playwright(args.paginas)
 
     # dedup por url
     dedup = {}
