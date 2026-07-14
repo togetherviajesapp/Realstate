@@ -15,6 +15,8 @@ from datetime import date
 
 import pandas as pd
 
+from barrios import normalizar_barrios
+
 COLS = ["portal", "operacion", "url", "titulo", "tipo_inmueble", "barrio",
         "precio_moneda", "precio_valor", "gastos_comunes", "dormitorios", "banos", "m2"]
 
@@ -111,6 +113,9 @@ def main():
             "nuevos": c["nuevos"], "mantenidos": c["mantenidos"], "bajas": c["bajas"],
             "total_activos": c["nuevos"] + c["mantenidos"],
         })
+
+    print("Normalizando barrios (match directo + geocoding para direcciones)...", file=sys.stderr)
+    listado = normalizar_barrios(listado)
 
     out = {
         "actualizado": fecha,
