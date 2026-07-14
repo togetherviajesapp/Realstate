@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inmuebles Montevideo</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0f1420; --panel:#161c2c; --panel2:#1d2436; --border:#2a3247;
@@ -368,11 +368,15 @@ async function init(){
     render();
   });
 
-  renderChart();
+  try { renderChart(); } catch(e) { console.error('Error dibujando el grafico:', e); }
   render();
 }
 
-init();
+init().catch(e => {
+  console.error(e);
+  document.getElementById('tableWrap').innerHTML =
+    '<div class="empty">Hubo un error cargando los datos: ' + e.message + '</div>';
+});
 </script>
 </body>
 </html>
