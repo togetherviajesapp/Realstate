@@ -8,6 +8,8 @@ Uso:
 """
 import argparse
 import csv
+import hashlib
+import os
 import re
 import sys
 import time
@@ -33,12 +35,29 @@ def extract(page):
         """
         () => {
             function clean(u) { return u ? u.split('?')[0].split('#')[0] : ''; }
+            function realUrl(c, titleEl) {
+                // 1) href directo en el elemento de titulo
+                if (titleEl) {
+                    const direct = titleEl.getAttribute('href');
+                    if (direct) return direct;
+                    // 2) el titulo puede estar dentro de un <a> padre
+                    const wrapA = titleEl.closest('a[href]');
+                    if (wrapA) return wrapA.getAttribute('href');
+                }
+                // 3) cualquier <a> de la tarjeta que apunte a una publicacion real
+                const anchors = Array.from(c.querySelectorAll('a[href]'));
+                const real = anchors.find(a => /MLU-\\d+|articulo\\.mercadolibre|casa\\.mercadolibre|inmuebles\\.mercadolibre/i.test(a.getAttribute('href') || ''));
+                if (real) return real.getAttribute('href');
+                // 4) ultimo recurso: el primer link de la tarjeta
+                if (anchors.length) return anchors[0].getAttribute('href');
+                return '';
+            }
             const cards = document.querySelectorAll('.ui-search-layout__item');
             const out = [];
             cards.forEach(c => {
                 const titleEl = c.querySelector('.poly-component__title');
                 const title = titleEl ? titleEl.textContent.trim() : '';
-                const url = titleEl ? clean(titleEl.getAttribute('href')) : '';
+                const url = clean(realUrl(c, titleEl));
                 const priceEl = c.querySelector('.poly-price__current .andes-money-amount__fraction');
                 const currEl = c.querySelector('.poly-price__current .andes-money-amount__currency-symbol');
                 const attrs = Array.from(c.querySelectorAll('.poly-attributes_list__item')).map(a => a.textContent.trim());
@@ -82,6 +101,15 @@ def guess_tipo(title):
     return ""
 
 
+def fallback_id(it):
+    """ID estable (no es un link real) para avisos donde no se pudo extraer la URL.
+    Se usa como clave interna para el diff nuevo/mantenido; el sitio no lo muestra
+    como link clickeable porque no empieza con http."""
+    basis = f"{it['title']}|{it['loc']}|{it['price']}"
+    h = hashlib.md5(basis.encode("utf-8")).hexdigest()[:12]
+    return f"mercadolibre-sin-link-{h}"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
@@ -116,7 +144,7 @@ def main():
                     all_rows.append({
                         "portal": "MercadoLibre",
                         "operacion": operacion,
-                        "url": it["url"] or ("https://mercadolibre.com.uy/#" + str(hash(it["title"]))),
+                        "url": it["url"] or fallback_id(it),
                         "titulo": it["title"],
                         "tipo_inmueble": "Proyecto" if it["isProject"] else guess_tipo(it["title"]),
                         "barrio": barrio,
@@ -137,6 +165,9 @@ def main():
 
     cols = ["portal", "operacion", "url", "titulo", "tipo_inmueble", "barrio",
             "precio_moneda", "precio_valor", "gastos_comunes", "dormitorios", "banos", "m2"]
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     with open(args.out, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()

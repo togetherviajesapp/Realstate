@@ -8,6 +8,7 @@ Uso:
 """
 import argparse
 import csv
+import os
 import re
 import sys
 import time
@@ -176,6 +177,9 @@ def main():
 
     cols = ["portal", "operacion", "url", "titulo", "tipo_inmueble", "barrio",
             "precio_moneda", "precio_valor", "gastos_comunes", "dormitorios", "banos", "m2"]
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     with open(args.out, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
