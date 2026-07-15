@@ -291,7 +291,14 @@ def collect_gallito_playwright(paginas):
                 print(f"  fetching {url}", file=sys.stderr)
                 try:
                     page.goto(url, timeout=45000, wait_until="domcontentloaded")
-                    page.wait_for_selector('a[href*="-inmuebles-"]', timeout=25000)
+                    # OJO: no usar el estado por defecto ("visible") aca. Hay ~330
+                    # anchors que matchean este selector en la pagina y Playwright
+                    # espera a que el PRIMERO de ellos (en orden del DOM) sea visible;
+                    # ese primero suele ser un link oculto/duplicado, no una tarjeta
+                    # real, asi que con "visible" esto siempre tardaba en timeout
+                    # aunque los datos ya estaban en el HTML. Con "attached" alcanza
+                    # con que exista en el DOM (los datos se leen via evaluate() igual).
+                    page.wait_for_selector('a[href*="-inmuebles-"]', timeout=25000, state="attached")
                 except Exception as e:
                     print(f"  [warn] {url} -> {e}", file=sys.stderr)
                     continue
