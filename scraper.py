@@ -287,6 +287,24 @@ def parse_gallito_items(items, operacion):
     return list(dedup.values())
 
 
+def warmup_gallito(page):
+    """Visita la home de Gallito antes de pedir las paginas de listado.
+    En la corrida del 15/7 se vio un patron muy especifico: la pagina 1
+    siempre colgaba, pero la pagina 2 (la primera que realmente cargaba
+    rapido) traia datos, y de ahi en mas todo volvia a fallar. Eso sugiere
+    que el sitio necesita algo (cookie/sesion) que recien se establece
+    despues de una visita "normal" a la home, antes de pedir paginas de
+    listado especificas. Si esta visita falla, seguimos igual: no es
+    critico, solo un intento de mejorar la tasa de exito."""
+    try:
+        page.goto("https://www.gallito.com.uy/", timeout=60000, wait_until="domcontentloaded")
+        time.sleep(3)
+        return True
+    except Exception as e:
+        print(f"  [warn] no se pudo calentar la sesion en la home de Gallito: {e}", file=sys.stderr)
+        return False
+
+
 def cargar_pagina_gallito(page, url, intentos=2):
     """Navega a una pagina de Gallito y espera a que aparezcan las tarjetas.
     Reintenta una vez mas si la primera pasada falla (timeouts intermitentes
@@ -336,6 +354,8 @@ def collect_gallito_playwright(paginas):
         context.route("**/*", bloquear_recursos_innecesarios)
         page = context.new_page()
 
+        warmup_gallito(page)
+
         for operacion, base in GALLITO_BASE.items():
             for n in range(1, paginas + 1):
                 url = base if n == 1 else f"{base}?pag={n}"
@@ -347,7 +367,9 @@ def collect_gallito_playwright(paginas):
                     rows.extend(page_rows)
                 else:
                     print(f"  [warn] se omite {url} tras reintentos", file=sys.stderr)
-                time.sleep(1.5)
+                # espera mas larga y con variacion (no fija) entre pedidos,
+                # para no parecer un bot pegandole al sitio a ritmo constante
+                time.sleep(3 + random.uniform(0, 3))
         browser.close()
     return rows
 
