@@ -48,6 +48,29 @@ Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
 window.chrome = window.chrome || { runtime: {} };
 """
 
+# Dominios de publicidad/analytics que suelen frenar la carga de paginas ASP.NET
+# clasicas como Gallito: son requests sincronicos que a veces tardan muchisimo
+# (o directamente nunca resuelven) y hacen que el navegador quede "cargando"
+# durante 45+ segundos. Bloquearlos no afecta los datos que leemos (son solo
+# texto/HTML), pero acelera la carga y evita esos cuelgues.
+DOMINIOS_BLOQUEADOS = (
+    "doubleclick.net", "googlesyndication.com", "googletagmanager.com",
+    "google-analytics.com", "cxense.com", "facebook.net", "facebook.com",
+)
+
+
+def bloquear_recursos_innecesarios(route):
+    """Aborta imagenes/fuentes/medios y scripts de ads/analytics conocidos.
+    Se usa con context.route('**/*', ...) tanto para Gallito como para
+    cualquier otra pagina pesada que carguemos con Playwright."""
+    req = route.request
+    if req.resource_type in ("image", "media", "font"):
+        return route.abort()
+    if any(dominio in req.url for dominio in DOMINIOS_BLOQUEADOS):
+        return route.abort()
+    return route.continue_()
+
+
 TIPOS = ["Apartamento", "Casa", "Oficina", "Local Comercial", "Local", "Terreno",
          "Garage", "Chacra", "Edificio", "Galpón", "Piso", "Pieza", "Cochera"]
 TIPO_RE = "|".join(re.escape(t) for t in TIPOS)
@@ -264,6 +287,28 @@ def parse_gallito_items(items, operacion):
     return list(dedup.values())
 
 
+def cargar_pagina_gallito(page, url, intentos=2):
+    """Navega a una pagina de Gallito y espera a que aparezcan las tarjetas.
+    Reintenta una vez mas si la primera pasada falla (timeouts intermitentes
+    por scripts de ads/analytics lentos), antes de darse por vencido."""
+    for intento in range(1, intentos + 1):
+        try:
+            page.goto(url, timeout=60000, wait_until="domcontentloaded")
+            # OJO: no usar el estado por defecto ("visible") aca. Hay ~330
+            # anchors que matchean este selector en la pagina y Playwright
+            # esperaria a que el PRIMERO de ellos (en orden del DOM) sea
+            # visible; ese primero suele ser un link oculto/duplicado, no una
+            # tarjeta real. Con "attached" alcanza con que exista en el DOM
+            # (los datos se leen via evaluate() igual).
+            page.wait_for_selector('a[href*="-inmuebles-"]', timeout=20000, state="attached")
+            return True
+        except Exception as e:
+            print(f"  [warn] intento {intento}/{intentos} {url} -> {e}", file=sys.stderr)
+            if intento < intentos:
+                time.sleep(3)
+    return False
+
+
 def collect_gallito_playwright(paginas):
     rows = []
     with sync_playwright() as p:
@@ -283,29 +328,25 @@ def collect_gallito_playwright(paginas):
             },
         )
         context.add_init_script(STEALTH_JS)
+        # Gallito es un sitio ASP.NET clasico con ~90 requests por pagina entre
+        # imagenes y scripts de ads/analytics (doubleclick, googlesyndication,
+        # tags de analytics, cxense) que a veces cuelgan la carga 45+ segundos.
+        # No los necesitamos para leer los datos (son solo texto), asi que se
+        # bloquean para acelerar la carga y evitar esos cuelgues.
+        context.route("**/*", bloquear_recursos_innecesarios)
         page = context.new_page()
 
         for operacion, base in GALLITO_BASE.items():
             for n in range(1, paginas + 1):
                 url = base if n == 1 else f"{base}?pag={n}"
                 print(f"  fetching {url}", file=sys.stderr)
-                try:
-                    page.goto(url, timeout=45000, wait_until="domcontentloaded")
-                    # OJO: no usar el estado por defecto ("visible") aca. Hay ~330
-                    # anchors que matchean este selector en la pagina y Playwright
-                    # espera a que el PRIMERO de ellos (en orden del DOM) sea visible;
-                    # ese primero suele ser un link oculto/duplicado, no una tarjeta
-                    # real, asi que con "visible" esto siempre tardaba en timeout
-                    # aunque los datos ya estaban en el HTML. Con "attached" alcanza
-                    # con que exista en el DOM (los datos se leen via evaluate() igual).
-                    page.wait_for_selector('a[href*="-inmuebles-"]', timeout=25000, state="attached")
-                except Exception as e:
-                    print(f"  [warn] {url} -> {e}", file=sys.stderr)
-                    continue
-                items = extract_gallito_cards(page)
-                page_rows = parse_gallito_items(items, operacion)
-                print(f"    -> {len(page_rows)} avisos", file=sys.stderr)
-                rows.extend(page_rows)
+                if cargar_pagina_gallito(page, url):
+                    items = extract_gallito_cards(page)
+                    page_rows = parse_gallito_items(items, operacion)
+                    print(f"    -> {len(page_rows)} avisos", file=sys.stderr)
+                    rows.extend(page_rows)
+                else:
+                    print(f"  [warn] se omite {url} tras reintentos", file=sys.stderr)
                 time.sleep(1.5)
         browser.close()
     return rows

@@ -16,6 +16,11 @@
   header{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
   header h1{font-size:20px;margin:0;font-weight:600;}
   header .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+  .tabs{display:flex;gap:6px;}
+  .tabbtn{padding:8px 16px;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+  .tabbtn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .view{display:none;}
+  .view.active{display:block;}
   .cards{display:flex;gap:12px;padding:20px 28px 0;flex-wrap:wrap;}
   .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 18px;min-width:130px;flex:1;}
   .card .n{font-size:24px;font-weight:700;}
@@ -54,6 +59,7 @@
   .badge.Nuevo{background:rgba(99,211,166,.15);color:var(--accent2);}
   .badge.Mantenido{background:rgba(79,140,255,.15);color:var(--accent);}
   .badge.Baja{background:rgba(255,107,107,.15);color:var(--danger);}
+  .badge.PosibleVenta{background:rgba(255,184,79,.15);color:var(--warn);}
   .portalpill{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);border:1px solid var(--border);}
   .chart-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;}
   .empty{padding:40px;text-align:center;color:var(--muted);}
@@ -70,6 +76,14 @@
   .msel-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;font-size:13px;border-radius:4px;cursor:pointer;}
   .msel-opt:hover{background:#232b40;}
   .msel-opt input{margin:0;}
+
+  .analisis-wrap{padding:20px 28px;}
+  .disclaimer{background:rgba(255,184,79,.1);border:1px solid rgba(255,184,79,.35);color:var(--warn);
+    border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:20px;line-height:1.5;}
+  .disclaimer b{color:var(--text);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:900px){.grid2{grid-template-columns:1fr;}}
+  .chart-wrap h4{margin:0 0 12px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
 </style>
 </head>
 <body>
@@ -79,119 +93,176 @@
     <h1>Inmuebles Montevideo</h1>
     <div class="sub">Venta y alquiler &middot; InfoCasas, Gallito y MercadoLibre &middot; actualizado: <span id="fechaActualizado">-</span></div>
   </div>
+  <div class="tabs">
+    <button class="tabbtn active" id="tabBuscador">Buscador</button>
+    <button class="tabbtn" id="tabAnalisis">Análisis</button>
+  </div>
 </header>
 
-<div class="cards">
-  <div class="card"><div class="n" id="cActivos">-</div><div class="l">avisos activos</div></div>
-  <div class="card nuevo"><div class="n" id="cNuevos">-</div><div class="l">nuevos (última corrida)</div></div>
-  <div class="card"><div class="n" id="cMantenidos">-</div><div class="l">se mantienen</div></div>
-  <div class="card baja"><div class="n" id="cBajas">-</div><div class="l">bajas (última corrida)</div></div>
+<div id="viewBuscador" class="view active">
+  <div class="cards">
+    <div class="card"><div class="n" id="cActivos">-</div><div class="l">avisos activos</div></div>
+    <div class="card nuevo"><div class="n" id="cNuevos">-</div><div class="l">nuevos (última corrida)</div></div>
+    <div class="card"><div class="n" id="cMantenidos">-</div><div class="l">se mantienen</div></div>
+    <div class="card baja"><div class="n" id="cBajas">-</div><div class="l">bajas (última corrida)</div></div>
+  </div>
+
+  <div class="layout">
+    <aside class="filters">
+      <h3>Filtros</h3>
+
+      <div class="fgroup">
+        <label>Operación</label>
+        <div class="chips" id="fOperacion">
+          <div class="chip active" data-val="">Todas</div>
+          <div class="chip" data-val="venta">Venta</div>
+          <div class="chip" data-val="alquiler">Alquiler</div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Portal</label>
+        <div class="chips" id="fPortal">
+          <div class="chip active" data-val="">Todos</div>
+          <div class="chip" data-val="InfoCasas">InfoCasas</div>
+          <div class="chip" data-val="Gallito">Gallito</div>
+          <div class="chip" data-val="MercadoLibre">MercadoLibre</div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Estado</label>
+        <div class="chips" id="fEstado">
+          <div class="chip active" data-val="">Todos</div>
+          <div class="chip" data-val="Nuevo">Nuevo</div>
+          <div class="chip" data-val="Mantenido">Mantenido</div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Tipo de inmueble</label>
+        <div class="msel" id="fTipo">
+          <button type="button" class="msel-btn">Todos</button>
+          <div class="msel-panel"></div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Barrio</label>
+        <div class="msel" id="fBarrio">
+          <button type="button" class="msel-btn">Todos</button>
+          <div class="msel-panel"></div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Dormitorios</label>
+        <select id="fDorm">
+          <option value="">Todos</option>
+          <option value="0">Monoambiente</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4+">4 o más</option>
+        </select>
+      </div>
+
+      <div class="fgroup">
+        <label>Moneda</label>
+        <div class="chips" id="fMoneda">
+          <div class="chip active" data-val="">Todas</div>
+          <div class="chip" data-val="USD">US$ (dolares)</div>
+          <div class="chip" data-val="UYU">$ (pesos)</div>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>Precio</label>
+        <div class="range">
+          <input type="number" id="fPrecioMin" placeholder="Mín">
+          <input type="number" id="fPrecioMax" placeholder="Máx">
+        </div>
+      </div>
+
+      <button class="reset" id="btnReset">Limpiar filtros</button>
+    </aside>
+
+    <div class="main">
+      <div class="chart-wrap">
+        <canvas id="chartHist" height="70"></canvas>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="fBuscar" placeholder="Buscar por título o dirección...">
+        <div class="count" id="resultCount">-</div>
+      </div>
+
+      <div id="tableWrap"></div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </div>
 </div>
 
-<div class="layout">
-  <aside class="filters">
-    <h3>Filtros</h3>
+<div id="viewAnalisis" class="view">
+  <div class="analisis-wrap">
+    <div class="disclaimer">
+      <b>Importante:</b> cuando un aviso deja de aparecer en el portal no significa necesariamente que se vendió o
+      alquiló &mdash; el portal también puede darlo de baja por vencimiento u otro motivo. Por eso, todo lo que
+      aparece acá como "posible venta/alquiler" es una <b>estimación</b>, no una confirmación. Además, este historial
+      recién empezó a registrarse a partir de esta actualización: las bajas de corridas anteriores a esta funcionalidad
+      no quedaron con el detalle de tipo/zona/precio, solo como un conteo total.
+    </div>
 
-    <div class="fgroup">
+    <div class="fgroup" style="max-width:300px;margin-bottom:20px;">
       <label>Operación</label>
-      <div class="chips" id="fOperacion">
+      <div class="chips" id="aOperacion">
         <div class="chip active" data-val="">Todas</div>
         <div class="chip" data-val="venta">Venta</div>
         <div class="chip" data-val="alquiler">Alquiler</div>
       </div>
     </div>
 
-    <div class="fgroup">
-      <label>Portal</label>
-      <div class="chips" id="fPortal">
-        <div class="chip active" data-val="">Todos</div>
-        <div class="chip" data-val="InfoCasas">InfoCasas</div>
-        <div class="chip" data-val="Gallito">Gallito</div>
-        <div class="chip" data-val="MercadoLibre">MercadoLibre</div>
+    <div class="cards" style="padding:0 0 20px;">
+      <div class="card baja"><div class="n" id="aTotalBajas">-</div><div class="l">posibles ventas/alquileres registradas</div></div>
+      <div class="card"><div class="n" id="aDiasProm">-</div><div class="l">días promedio publicado antes de la baja</div></div>
+      <div class="card"><div class="n" id="aTopTipo">-</div><div class="l">tipo más frecuente en bajas</div></div>
+      <div class="card"><div class="n" id="aTopBarrio">-</div><div class="l">barrio más frecuente en bajas</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="chart-wrap">
+        <h4>Bajas por tipo de inmueble</h4>
+        <canvas id="chartTipo" height="220"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <h4>Bajas por barrio (top 10)</h4>
+        <canvas id="chartBarrio" height="220"></canvas>
       </div>
     </div>
 
-    <div class="fgroup">
-      <label>Estado</label>
-      <div class="chips" id="fEstado">
-        <div class="chip active" data-val="">Todos</div>
-        <div class="chip" data-val="Nuevo">Nuevo</div>
-        <div class="chip" data-val="Mantenido">Mantenido</div>
-      </div>
-    </div>
-
-    <div class="fgroup">
-      <label>Tipo de inmueble</label>
-      <div class="msel" id="fTipo">
-        <button type="button" class="msel-btn">Todos</button>
-        <div class="msel-panel"></div>
-      </div>
-    </div>
-
-    <div class="fgroup">
-      <label>Barrio</label>
-      <div class="msel" id="fBarrio">
-        <button type="button" class="msel-btn">Todos</button>
-        <div class="msel-panel"></div>
-      </div>
-    </div>
-
-    <div class="fgroup">
-      <label>Dormitorios</label>
-      <select id="fDorm">
-        <option value="">Todos</option>
-        <option value="0">Monoambiente</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4+">4 o más</option>
-      </select>
-    </div>
-
-    <div class="fgroup">
-      <label>Moneda</label>
-      <div class="chips" id="fMoneda">
-        <div class="chip active" data-val="">Todas</div>
-        <div class="chip" data-val="USD">US$ (dolares)</div>
-        <div class="chip" data-val="UYU">$ (pesos)</div>
-      </div>
-    </div>
-
-    <div class="fgroup">
-      <label>Precio</label>
-      <div class="range">
-        <input type="number" id="fPrecioMin" placeholder="Mín">
-        <input type="number" id="fPrecioMax" placeholder="Máx">
-      </div>
-    </div>
-
-    <button class="reset" id="btnReset">Limpiar filtros</button>
-  </aside>
-
-  <div class="main">
     <div class="chart-wrap">
-      <canvas id="chartHist" height="70"></canvas>
+      <h4>Variación de precio vs. tiempo publicado (cada punto es un aviso que cambió de precio)</h4>
+      <canvas id="chartVariacion" height="90"></canvas>
     </div>
 
-    <div class="toolbar">
-      <input type="text" id="fBuscar" placeholder="Buscar por título o dirección...">
-      <div class="count" id="resultCount">-</div>
+    <div class="chart-wrap">
+      <h4>Últimas posibles ventas/alquileres</h4>
+      <div id="tableBajasWrap"></div>
     </div>
-
-    <div id="tableWrap"></div>
-    <div class="pager" id="pager"></div>
   </div>
 </div>
 
 <footer>Datos de InfoCasas, Gallito y MercadoLibre &middot; uso personal &middot; se actualiza automáticamente cada semana</footer>
 
 <script>
-let DATA = {listado: [], historico: [], actualizado: '', resumen_ultima_corrida: {}};
+let DATA = {listado: [], historico: [], bajas_historico: [], actualizado: '', resumen_ultima_corrida: {}};
 let sortKey = 'ultima_vez_visto', sortDir = -1;
 let page = 1;
 const PAGE_SIZE = 40;
 
 const state = { operacion: '', portal: '', estado: '', tipo: [], barrio: [], moneda: '', dorm: '', pmin: '', pmax: '', q: '' };
+const analisisState = { operacion: '' };
+let chartVariacionInstance = null, chartTipoInstance = null, chartBarrioInstance = null;
 
 function fmtPrice(row){
   if(!row.precio_valor) return '-';
@@ -313,7 +384,9 @@ function render(){
     html += `<td>${fmtPrice(r)}</td>`;
     html += `<td><span class="badge ${r.estado}">${r.estado}</span></td>`;
     html += `<td>${r.ultima_vez_visto || '-'}</td>`;
-    html += `<td><a class="rowlink" href="${r.url}" target="_blank" rel="noopener">Ver &rarr;</a></td>`;
+    html += r.url && r.url.startsWith('http')
+      ? `<td><a class="rowlink" href="${r.url}" target="_blank" rel="noopener">Ver &rarr;</a></td>`
+      : `<td><span style="color:var(--muted)" title="Este portal no expuso un link directo para este aviso">Sin link</span></td>`;
     html += '</tr>';
   });
   html += '</tbody></table>';
@@ -339,14 +412,13 @@ function render(){
   if(nextBtn) nextBtn.addEventListener('click', () => { page++; render(); });
 }
 
-function setupChips(containerId, stateKey){
+function setupChips(containerId, stateKey, targetState, onChange){
   document.querySelectorAll(`#${containerId} .chip`).forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll(`#${containerId} .chip`).forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
-      state[stateKey] = chip.dataset.val;
-      page = 1;
-      render();
+      targetState[stateKey] = chip.dataset.val;
+      onChange();
     });
   });
 }
@@ -381,9 +453,170 @@ function renderChart(){
   });
 }
 
+// ---------------------------------------------------------------------------
+// Análisis: nuevas, posibles ventas/alquileres (bajas) y variación de precio
+// ---------------------------------------------------------------------------
+
+function diasDesde(f1, f2){
+  try{
+    const d1 = new Date(f1), d2 = new Date(f2);
+    const dias = Math.round((d2 - d1) / (1000*60*60*24));
+    return isNaN(dias) ? null : dias;
+  }catch(e){ return null; }
+}
+
+function calcVariacionPct(hist){
+  if(!hist || hist.length < 2) return null;
+  const first = Number(hist[0].precio_valor);
+  const last = Number(hist[hist.length-1].precio_valor);
+  if(!first || isNaN(first) || isNaN(last)) return null;
+  return ((last - first) / first) * 100;
+}
+
+function topEntries(counts, n){
+  return Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, n);
+}
+
+function renderAnalisisCharts(bajas){
+  // por tipo
+  const porTipo = {};
+  bajas.forEach(b => { const t = b.tipo_inmueble || 'Sin tipo'; porTipo[t] = (porTipo[t]||0) + 1; });
+  const topTipos = topEntries(porTipo, 10);
+
+  if(chartTipoInstance) chartTipoInstance.destroy();
+  chartTipoInstance = new Chart(document.getElementById('chartTipo'), {
+    type: 'bar',
+    data: {
+      labels: topTipos.map(t => t[0]),
+      datasets: [{ label: 'Posibles ventas/alquileres', data: topTipos.map(t => t[1]), backgroundColor: '#4f8cff' }]
+    },
+    options: {
+      responsive:true,
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ ticks:{ color:'#8b93a7' }, grid:{ display:false } }, y:{ ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } } }
+    }
+  });
+
+  // por barrio
+  const porBarrio = {};
+  bajas.forEach(b => { const z = b.barrio || 'Sin barrio'; porBarrio[z] = (porBarrio[z]||0) + 1; });
+  const topBarrios = topEntries(porBarrio, 10);
+
+  if(chartBarrioInstance) chartBarrioInstance.destroy();
+  chartBarrioInstance = new Chart(document.getElementById('chartBarrio'), {
+    type: 'bar',
+    data: {
+      labels: topBarrios.map(t => t[0]),
+      datasets: [{ label: 'Posibles ventas/alquileres', data: topBarrios.map(t => t[1]), backgroundColor: '#63d3a6' }]
+    },
+    options: {
+      responsive:true,
+      indexAxis: 'y',
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } }, y:{ ticks:{ color:'#8b93a7' }, grid:{ display:false } } }
+    }
+  });
+
+  return { topTipos, topBarrios };
+}
+
+function renderAnalisisVariacion(op){
+  const puntosActivos = [];
+  const puntosBajas = [];
+
+  DATA.listado.forEach(r => {
+    if(op && r.operacion !== op) return;
+    const v = calcVariacionPct(r.historial_precio);
+    if(v === null) return;
+    const dias = diasDesde(r.primera_vez_visto, DATA.actualizado);
+    if(dias === null) return;
+    puntosActivos.push({ x: dias, y: Math.round(v*10)/10 });
+  });
+
+  DATA.bajas_historico.forEach(b => {
+    if(op && b.operacion !== op) return;
+    const v = calcVariacionPct(b.historial_precio);
+    if(v === null) return;
+    if(b.dias_publicado === null || b.dias_publicado === undefined) return;
+    puntosBajas.push({ x: b.dias_publicado, y: Math.round(v*10)/10 });
+  });
+
+  if(chartVariacionInstance) chartVariacionInstance.destroy();
+  chartVariacionInstance = new Chart(document.getElementById('chartVariacion'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Activos (cambiaron de precio)', data: puntosActivos, backgroundColor: 'rgba(79,140,255,.7)' },
+        { label: 'Posibles ventas/alquileres (cambiaron de precio)', data: puntosBajas, backgroundColor: 'rgba(255,184,79,.8)' },
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{ legend:{ labels:{ color:'#e8ecf4' } } },
+      scales:{
+        x:{ title:{ display:true, text:'Días desde la primera publicación', color:'#8b93a7' }, ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } },
+        y:{ title:{ display:true, text:'Variación de precio (%)', color:'#8b93a7' }, ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } }
+      }
+    }
+  });
+}
+
+function renderTablaBajas(bajas){
+  const recientes = [...bajas].sort((a,b) => (b.fecha_baja||'').localeCompare(a.fecha_baja||'')).slice(0, 150);
+  let html = '<table><thead><tr>'
+    + '<th>Portal</th><th>Op.</th><th>Tipo</th><th>Barrio</th><th>Último precio</th>'
+    + '<th>Días publicado</th><th>Fecha de baja</th><th>Estado</th></tr></thead><tbody>';
+
+  if(recientes.length === 0){
+    html += '<tr><td colspan="8"><div class="empty">Todavía no hay bajas registradas con este filtro. Este historial se arma corrida a corrida a partir de ahora.</div></td></tr>';
+  }
+
+  recientes.forEach(b => {
+    html += '<tr>';
+    html += `<td><span class="portalpill">${b.portal}</span></td>`;
+    html += `<td>${b.operacion}</td>`;
+    html += `<td>${b.tipo_inmueble || '-'}</td>`;
+    html += `<td>${b.barrio || '-'}</td>`;
+    html += `<td>${fmtPrice(b)}</td>`;
+    html += `<td>${b.dias_publicado ?? '-'}</td>`;
+    html += `<td>${b.fecha_baja || '-'}</td>`;
+    html += `<td><span class="badge PosibleVenta">Posible ${b.operacion === 'alquiler' ? 'alquiler' : 'venta'}</span></td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('tableBajasWrap').innerHTML = html;
+}
+
+function renderAnalisis(){
+  const op = analisisState.operacion;
+  const bajas = (DATA.bajas_historico || []).filter(b => !op || b.operacion === op);
+
+  document.getElementById('aTotalBajas').textContent = bajas.length;
+
+  const diasList = bajas.map(b => b.dias_publicado).filter(d => d !== null && d !== undefined);
+  const avgDias = diasList.length ? Math.round(diasList.reduce((a,b) => a+b, 0) / diasList.length) : '-';
+  document.getElementById('aDiasProm').textContent = avgDias;
+
+  const { topTipos, topBarrios } = renderAnalisisCharts(bajas);
+  document.getElementById('aTopTipo').textContent = topTipos.length ? topTipos[0][0] : '-';
+  document.getElementById('aTopBarrio').textContent = topBarrios.length ? topBarrios[0][0] : '-';
+
+  renderAnalisisVariacion(op);
+  renderTablaBajas(bajas);
+}
+
+function switchTab(tab){
+  document.getElementById('viewBuscador').classList.toggle('active', tab === 'buscador');
+  document.getElementById('viewAnalisis').classList.toggle('active', tab === 'analisis');
+  document.getElementById('tabBuscador').classList.toggle('active', tab === 'buscador');
+  document.getElementById('tabAnalisis').classList.toggle('active', tab === 'analisis');
+  if(tab === 'analisis') renderAnalisis();
+}
+
 async function init(){
   const res = await fetch('data.json?_=' + Date.now());
   DATA = await res.json();
+  if(!DATA.bajas_historico) DATA.bajas_historico = [];
 
   document.getElementById('fechaActualizado').textContent = DATA.actualizado;
   document.getElementById('cActivos').textContent = DATA.total_activos;
@@ -401,10 +634,14 @@ async function init(){
   document.getElementById('fPrecioMax').addEventListener('input', e => { state.pmax = e.target.value; page=1; render(); });
   document.getElementById('fBuscar').addEventListener('input', e => { state.q = e.target.value; page=1; render(); });
 
-  setupChips('fOperacion', 'operacion');
-  setupChips('fPortal', 'portal');
-  setupChips('fEstado', 'estado');
-  setupChips('fMoneda', 'moneda');
+  setupChips('fOperacion', 'operacion', state, () => { page=1; render(); });
+  setupChips('fPortal', 'portal', state, () => { page=1; render(); });
+  setupChips('fEstado', 'estado', state, () => { page=1; render(); });
+  setupChips('fMoneda', 'moneda', state, () => { page=1; render(); });
+  setupChips('aOperacion', 'operacion', analisisState, () => renderAnalisis());
+
+  document.getElementById('tabBuscador').addEventListener('click', () => switchTab('buscador'));
+  document.getElementById('tabAnalisis').addEventListener('click', () => switchTab('analisis'));
 
   document.getElementById('btnReset').addEventListener('click', () => {
     state.operacion = ''; state.portal = ''; state.estado = ''; state.moneda = '';
@@ -416,8 +653,8 @@ async function init(){
     document.getElementById('fPrecioMin').value = '';
     document.getElementById('fPrecioMax').value = '';
     document.getElementById('fBuscar').value = '';
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    document.querySelectorAll('.chip[data-val=""]').forEach(c => c.classList.add('active'));
+    document.querySelectorAll('#fOperacion .chip, #fPortal .chip, #fEstado .chip, #fMoneda .chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#fOperacion .chip[data-val=""], #fPortal .chip[data-val=""], #fEstado .chip[data-val=""], #fMoneda .chip[data-val=""]').forEach(c => c.classList.add('active'));
     page = 1;
     render();
   });

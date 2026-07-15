@@ -21,6 +21,35 @@ BASE = {
     "alquiler": "https://listado.mercadolibre.com.uy/inmuebles/alquiler/montevideo/",
 }
 
+# se ejecuta en el navegador antes de que cargue cualquier pagina: intenta
+# ocultar las señales mas obvias de que es un navegador automatizado
+STEALTH_JS = """
+Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+Object.defineProperty(navigator, 'languages', { get: () => ['es-UY', 'es'] });
+Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+window.chrome = window.chrome || { runtime: {} };
+"""
+
+# Dominios de publicidad/analytics que suelen frenar la carga de paginas
+# pesadas: son requests sincronicos que a veces tardan muchisimo (o nunca
+# resuelven) y hacen que el navegador quede "cargando" por muchos segundos.
+# Bloquearlos no afecta los datos que leemos (son solo texto/HTML), pero
+# acelera la carga y evita esos cuelgues.
+DOMINIOS_BLOQUEADOS = (
+    "doubleclick.net", "googlesyndication.com", "googletagmanager.com",
+    "google-analytics.com", "cxense.com", "facebook.net", "facebook.com",
+)
+
+
+def bloquear_recursos_innecesarios(route):
+    """Aborta imagenes/fuentes/medios y scripts de ads/analytics conocidos."""
+    req = route.request
+    if req.resource_type in ("image", "media", "font"):
+        return route.abort()
+    if any(dominio in req.url for dominio in DOMINIOS_BLOQUEADOS):
+        return route.abort()
+    return route.continue_()
+
 
 def page_url(base, n):
     if n == 1:
@@ -110,6 +139,37 @@ def fallback_id(it):
     return f"mercadolibre-sin-link-{h}"
 
 
+def diagnosticar_bloqueo(page, url):
+    """Cuando falla la espera del selector, deja pistas en el log sobre si
+    el sitio mostro un captcha/bloqueo o simplemente tardo demasiado, para
+    poder diagnosticar sin tener que reproducirlo a mano."""
+    try:
+        title = page.title()
+        body_snippet = page.evaluate("document.body ? document.body.innerText.slice(0, 200) : ''")
+        print(f"  [diag] {url} -> title={title!r}", file=sys.stderr)
+        print(f"  [diag] primeros 200 caracteres del body: {body_snippet!r}", file=sys.stderr)
+    except Exception as e:
+        print(f"  [diag] no se pudo inspeccionar la pagina: {e}", file=sys.stderr)
+
+
+def cargar_pagina_ml(page, url, intentos=2):
+    """Navega a una pagina de MercadoLibre y espera a que aparezcan las
+    tarjetas. Reintenta una vez mas si la primera pasada falla, antes de
+    darse por vencido."""
+    for intento in range(1, intentos + 1):
+        try:
+            page.goto(url, timeout=60000, wait_until="domcontentloaded")
+            page.wait_for_selector(".ui-search-layout__item", timeout=20000)
+            return True
+        except Exception as e:
+            print(f"  [warn] intento {intento}/{intentos} {url} -> {e}", file=sys.stderr)
+            if intento < intentos:
+                time.sleep(3)
+            else:
+                diagnosticar_bloqueo(page, url)
+    return False
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
@@ -118,23 +178,31 @@ def main():
 
     all_rows = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-dev-shm-usage",
+            ],
+        )
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
             locale="es-UY",
+            viewport={"width": 1366, "height": 900},
+            extra_http_headers={
+                "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
+            },
         )
+        context.add_init_script(STEALTH_JS)
+        context.route("**/*", bloquear_recursos_innecesarios)
         page = context.new_page()
 
         for operacion, base in BASE.items():
             for n in range(1, args.paginas + 1):
                 url = page_url(base, n)
                 print(f"  fetching {url}", file=sys.stderr)
-                try:
-                    page.goto(url, timeout=30000, wait_until="domcontentloaded")
-                    page.wait_for_selector(".ui-search-layout__item", timeout=15000)
-                except Exception as e:
-                    print(f"  [warn] {url} -> {e}", file=sys.stderr)
+                if not cargar_pagina_ml(page, url):
                     continue
                 items = extract(page)
                 print(f"    -> {len(items)} avisos", file=sys.stderr)
