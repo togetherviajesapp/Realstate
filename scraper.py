@@ -287,29 +287,36 @@ def parse_gallito_items(items, operacion):
     return list(dedup.values())
 
 
-def warmup_gallito(page):
-    """Visita la home de Gallito antes de pedir las paginas de listado.
-    En la corrida del 15/7 se vio un patron muy especifico: la pagina 1
-    siempre colgaba, pero la pagina 2 (la primera que realmente cargaba
-    rapido) traia datos, y de ahi en mas todo volvia a fallar. Eso sugiere
-    que el sitio necesita algo (cookie/sesion) que recien se establece
-    despues de una visita "normal" a la home, antes de pedir paginas de
-    listado especificas. Si esta visita falla, seguimos igual: no es
-    critico, solo un intento de mejorar la tasa de exito."""
-    try:
-        page.goto("https://www.gallito.com.uy/", timeout=60000, wait_until="domcontentloaded")
-        time.sleep(3)
-        return True
-    except Exception as e:
-        print(f"  [warn] no se pudo calentar la sesion en la home de Gallito: {e}", file=sys.stderr)
-        return False
+def _nuevo_contexto_gallito(browser):
+    """Crea un contexto de navegador nuevo (cookies/sesion limpias) para
+    Gallito, con el bloqueo de imagenes/ads ya aplicado."""
+    context = browser.new_context(
+        user_agent=UA,
+        locale="es-UY",
+        viewport={"width": 1366, "height": 900},
+        extra_http_headers={
+            "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
+        },
+    )
+    context.add_init_script(STEALTH_JS)
+    context.route("**/*", bloquear_recursos_innecesarios)
+    return context
 
 
-def cargar_pagina_gallito(page, url, intentos=2):
-    """Navega a una pagina de Gallito y espera a que aparezcan las tarjetas.
-    Reintenta una vez mas si la primera pasada falla (timeouts intermitentes
-    por scripts de ads/analytics lentos), antes de darse por vencido."""
+def cargar_pagina_gallito(browser, url, intentos=2):
+    """Descarga una pagina de Gallito y devuelve sus items (o None si fallo).
+
+    IMPORTANTE: en dos corridas seguidas (15/7) se vio que Gallito deja pasar
+    UNA sola pagina por sesion de navegador (a veces la primera, a veces la
+    segunda, sin patron fijo) y bloquea el resto — como si el sitio detectara
+    que la misma sesion ya pidio una pagina de listado y frenara las
+    siguientes. Por eso cada pagina se pide con un contexto de navegador
+    COMPLETAMENTE NUEVO (cookies limpias), simulando que cada request es la
+    primera visita de un usuario distinto, en vez de reusar la misma sesion
+    para las 10 paginas."""
     for intento in range(1, intentos + 1):
+        context = _nuevo_contexto_gallito(browser)
+        page = context.new_page()
         try:
             page.goto(url, timeout=60000, wait_until="domcontentloaded")
             # OJO: no usar el estado por defecto ("visible") aca. Hay ~330
@@ -319,12 +326,15 @@ def cargar_pagina_gallito(page, url, intentos=2):
             # tarjeta real. Con "attached" alcanza con que exista en el DOM
             # (los datos se leen via evaluate() igual).
             page.wait_for_selector('a[href*="-inmuebles-"]', timeout=20000, state="attached")
-            return True
+            items = extract_gallito_cards(page)
+            context.close()
+            return items
         except Exception as e:
             print(f"  [warn] intento {intento}/{intentos} {url} -> {e}", file=sys.stderr)
+            context.close()
             if intento < intentos:
                 time.sleep(3)
-    return False
+    return None
 
 
 def collect_gallito_playwright(paginas):
@@ -337,31 +347,13 @@ def collect_gallito_playwright(paginas):
                 "--disable-dev-shm-usage",
             ],
         )
-        context = browser.new_context(
-            user_agent=UA,
-            locale="es-UY",
-            viewport={"width": 1366, "height": 900},
-            extra_http_headers={
-                "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
-            },
-        )
-        context.add_init_script(STEALTH_JS)
-        # Gallito es un sitio ASP.NET clasico con ~90 requests por pagina entre
-        # imagenes y scripts de ads/analytics (doubleclick, googlesyndication,
-        # tags de analytics, cxense) que a veces cuelgan la carga 45+ segundos.
-        # No los necesitamos para leer los datos (son solo texto), asi que se
-        # bloquean para acelerar la carga y evitar esos cuelgues.
-        context.route("**/*", bloquear_recursos_innecesarios)
-        page = context.new_page()
-
-        warmup_gallito(page)
 
         for operacion, base in GALLITO_BASE.items():
             for n in range(1, paginas + 1):
                 url = base if n == 1 else f"{base}?pag={n}"
                 print(f"  fetching {url}", file=sys.stderr)
-                if cargar_pagina_gallito(page, url):
-                    items = extract_gallito_cards(page)
+                items = cargar_pagina_gallito(browser, url)
+                if items is not None:
                     page_rows = parse_gallito_items(items, operacion)
                     print(f"    -> {len(page_rows)} avisos", file=sys.stderr)
                     rows.extend(page_rows)
