@@ -303,7 +303,7 @@ def _nuevo_contexto_gallito(browser):
     return context
 
 
-def cargar_pagina_gallito(browser, url, intentos=2):
+def cargar_pagina_gallito(browser, url, intentos=3):
     """Descarga una pagina de Gallito y devuelve sus items (o None si fallo).
 
     IMPORTANTE: en dos corridas seguidas (15/7) se vio que Gallito deja pasar
@@ -339,6 +339,7 @@ def cargar_pagina_gallito(browser, url, intentos=2):
 
 def collect_gallito_playwright(paginas):
     rows = []
+    pendientes = []  # (operacion, url) que fallaron tras los reintentos normales
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -359,9 +360,30 @@ def collect_gallito_playwright(paginas):
                     rows.extend(page_rows)
                 else:
                     print(f"  [warn] se omite {url} tras reintentos", file=sys.stderr)
+                    pendientes.append((operacion, url))
                 # espera mas larga y con variacion (no fija) entre pedidos,
                 # para no parecer un bot pegandole al sitio a ritmo constante
                 time.sleep(3 + random.uniform(0, 3))
+
+        # Segunda vuelta: las paginas que quedaron pendientes se reintentan
+        # de nuevo al final, despues de una pausa mas larga. El espaciado en
+        # el tiempo (en vez de reintentar inmediatamente) fue justamente lo
+        # que ayudo a destrabar paginas en corridas anteriores, asi que vale
+        # la pena darles una oportunidad mas antes de darnos por vencidos.
+        if pendientes:
+            print(f"  Segunda vuelta para {len(pendientes)} pagina(s) pendiente(s)...", file=sys.stderr)
+            time.sleep(15)
+            for operacion, url in pendientes:
+                print(f"  reintentando {url}", file=sys.stderr)
+                items = cargar_pagina_gallito(browser, url)
+                if items is not None:
+                    page_rows = parse_gallito_items(items, operacion)
+                    print(f"    -> {len(page_rows)} avisos (segunda vuelta)", file=sys.stderr)
+                    rows.extend(page_rows)
+                else:
+                    print(f"  [warn] {url} sigue sin poder descargarse, se omite definitivamente esta corrida", file=sys.stderr)
+                time.sleep(5 + random.uniform(0, 3))
+
         browser.close()
     return rows
 
