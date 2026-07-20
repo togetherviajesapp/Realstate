@@ -31,20 +31,26 @@ jobs:
         continue-on-error: true
         run: python scraper_ml.py --out data/raw_mercadolibre.csv --paginas 3
 
+      - name: Descargar Casasymas
+        continue-on-error: true
+        run: python scraper_casasymas.py --out data/raw_casasymas.csv --paginas 5
+
       - name: Procesar y actualizar data.json
         run: |
           $FECHA = Get-Date -Format "yyyy-MM-dd"
-          if (Test-Path data/raw_mercadolibre.csv) {
-            python process.py --csvs data/raw_infocasas_gallito.csv data/raw_mercadolibre.csv --data data.json --fecha $FECHA
-          } else {
-            python process.py --csvs data/raw_infocasas_gallito.csv --data data.json --fecha $FECHA
-          }
+          $CSVS = @("data/raw_infocasas_gallito.csv")
+          if (Test-Path data/raw_mercadolibre.csv) { $CSVS += "data/raw_mercadolibre.csv" }
+          if (Test-Path data/raw_casasymas.csv) { $CSVS += "data/raw_casasymas.csv" }
+          python process.py --csvs $CSVS --data data.json --fecha $FECHA
+
+      - name: Generar Excel del reporte
+        run: python export_excel.py --data data.json --excel Reporte_Inmuebles_Montevideo.xlsx
 
       - name: Commitear cambios
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json data/
+          git add data.json data/ Reporte_Inmuebles_Montevideo.xlsx
           git diff --quiet --cached
           if ($LASTEXITCODE -ne 0) {
             git commit -m "Actualizacion semanal de inmuebles $(Get-Date -Format 'yyyy-MM-dd')"
