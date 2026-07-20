@@ -198,16 +198,18 @@ def collect(base_url, paginas, pagina_fmt, parser, operacion, sleep=1.5):
 
 def extract_gallito_cards(page):
     """Extrae los avisos visibles en la pagina actual usando el DOM.
-    Estructura confirmada en vivo (julio 2026):
+    Gallito rediseno el sitio (detectado 20/7/2026 -- la version anterior de
+    esta funcion, basada en '.contenedor-info', dejo de encontrar nada y
+    reporto 0 avisos en las 10 paginas). Estructura nueva confirmada en vivo:
       <article> (con un <a href*="-inmuebles-">)
-        .contenedor-info
+        a
+          div (imagen + badge "SUPER DESTACADO", opcional)
           div
-            p       -> "Casas en Aguada"        (tipo plural + " en " + barrio)
-            strong  -> "108.000"  (con <span> adentro = moneda, ej "U$S")
-          .mas-info
-            a
-              span  -> "3 Dormitorios" (puede faltar, ej. oficinas)
-              h2    -> "Casa en Venta" / "Apartamento en Venta - Villa Española"
+            span  -> "VENTA" / "ALQUILER" (no se usa, ya sabemos la operacion)
+            p     -> "Apartamento en venta de 3 dormitorios en Pocitos" (titulo)
+            div   -> "U$S 295.000" (precio+moneda juntos, o "Consultar")
+            span  -> "3 dorm." (puede faltar)
+            span  -> "97 m²" (puede faltar)
     """
     return page.evaluate(
         """
@@ -219,29 +221,22 @@ def extract_gallito_cards(page):
             cards.forEach(card => {
                 const linkEl = card.querySelector('a[href*="-inmuebles-"]');
                 const href = clean(linkEl ? linkEl.href : '');
-                const info = card.querySelector('.contenedor-info');
-                if (!info) return;
-                const firstDiv = info.children[0];
-                const p = firstDiv ? firstDiv.querySelector('p') : null;
-                const strong = firstDiv ? firstDiv.querySelector('strong') : null;
-                const currSpan = strong ? strong.querySelector('span') : null;
-                const masInfo = info.querySelector('.mas-info');
-                const dormSpan = masInfo ? masInfo.querySelector('a > span') : null;
-                const h2 = masInfo ? masInfo.querySelector('a > h2') : null;
-                let precioText = '';
-                if (strong) {
-                    precioText = Array.from(strong.childNodes)
-                        .filter(n => n.nodeType === 3)
-                        .map(n => n.textContent.trim())
-                        .join(' ').trim();
-                }
+                const leaves = Array.from(card.querySelectorAll('*'))
+                    .filter(el => el.children.length === 0 && el.textContent.trim());
+                const tituloEl = leaves.find(el => el.tagName === 'P');
+                // ojo: el titulo (<p>) tambien contiene texto como "3 dormitorios",
+                // asi que se excluye explicitamente al buscar precio/dorm/m2 para
+                // no quedarse con el titulo por error en esos campos.
+                const resto = leaves.filter(el => el !== tituloEl);
+                const precioEl = resto.find(el => /^(U\\$S|US\\$|\\$|Consultar)/.test(el.textContent.trim()));
+                const dormEl = resto.find(el => /dorm/i.test(el.textContent));
+                const m2El = resto.find(el => /m²/.test(el.textContent));
                 out.push({
                     href,
-                    barrio_tipo: p ? p.textContent.trim() : '',
-                    precio: precioText,
-                    moneda: currSpan ? currSpan.textContent.trim() : '',
-                    dorm_text: dormSpan ? dormSpan.textContent.trim() : '',
-                    titulo: h2 ? h2.textContent.trim() : ''
+                    titulo: tituloEl ? tituloEl.textContent.trim() : '',
+                    precio_text: precioEl ? precioEl.textContent.trim() : '',
+                    dorm_text: dormEl ? dormEl.textContent.trim() : '',
+                    m2_text: m2El ? m2El.textContent.trim() : ''
                 });
             });
             return out;
@@ -256,29 +251,37 @@ def parse_gallito_items(items, operacion):
         href = it.get("href") or ""
         if not href:
             continue
-        barrio_tipo = it.get("barrio_tipo") or ""
-        m = re.match(r"^(.*?)\s+en\s+(.+)$", barrio_tipo)
-        tipo_plural = m.group(1).strip() if m else ""
-        barrio = m.group(2).strip() if m else ""
+        titulo = it.get("titulo") or ""
+
+        # tipo: primera palabra del titulo (ej. "Apartamento en venta de...")
         tipo = ""
+        primera_palabra = titulo.split(" ", 1)[0] if titulo else ""
         for t in TIPOS:
-            singular = t.lower().rstrip("s")
-            if singular and singular in tipo_plural.lower():
+            if t.lower() == primera_palabra.lower():
                 tipo = t
                 break
-        titulo = it.get("titulo") or barrio_tipo
-        precio_raw = it.get("precio") or ""
-        precio = re.sub(r"\D", "", precio_raw)
-        moneda_raw = it.get("moneda") or ""
-        moneda = "USD" if ("U$S" in moneda_raw or "US$" in moneda_raw) else ("UYU" if moneda_raw else "")
+
+        # barrio: lo que sigue al ULTIMO " en " del titulo
+        # (ej. "Apartamento en venta de 3 dormitorios en Pocitos" -> "Pocitos")
+        partes = titulo.split(" en ")
+        barrio = partes[-1].strip() if len(partes) > 1 else ""
+
+        precio_raw = it.get("precio_text") or ""
+        moneda = "USD" if ("U$S" in precio_raw or "US$" in precio_raw) else ("UYU" if "$" in precio_raw else "")
+        precio = re.sub(r"\D", "", precio_raw) if precio_raw.strip() != "Consultar" else ""
+
         dorm_text = it.get("dorm_text") or ""
         m_dorm = re.search(r"(\d+)", dorm_text)
         dorm = m_dorm.group(1) if m_dorm else ("0" if "mono" in dorm_text.lower() else "")
+
+        m2_raw = it.get("m2_text") or ""
+        m2 = re.sub(r"[^\d.,]", "", m2_raw)
+
         rows.append({
             "portal": "Gallito", "operacion": operacion, "url": href,
             "titulo": titulo, "tipo_inmueble": tipo, "barrio": barrio,
             "precio_moneda": moneda, "precio_valor": precio, "gastos_comunes": "",
-            "dormitorios": dorm, "banos": "", "m2": "",
+            "dormitorios": dorm, "banos": "", "m2": m2,
         })
     # dedup por url dentro de esta tanda (una pagina puede repetir avisos destacados)
     dedup = {}

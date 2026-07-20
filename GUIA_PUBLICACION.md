@@ -116,6 +116,14 @@ Antes del 15/7, los datos de "nuevos", "bajas" y variación de precio mezclaban 
 
 Por eso `data.json` se reinició: la corrida del 15/7 (858 avisos, 100% de éxito en los tres portales) pasó a ser el nuevo punto de partida. Todos los avisos activos quedaron marcados como "Nuevo" desde esa fecha, y el registro de bajas y variación de precio arranca de cero. A partir de acá, cada corrida semanal compara contra un dato confiable, así que los gráficos de la pestaña Análisis van a reflejar cambios reales del mercado, no ruido técnico.
 
+## Gallito cambió de diseño (20/7/2026)
+
+La corrida del 20/7 dio 0 avisos de Gallito en las 10 páginas (antes venía dando 100%). No fue un timeout: la página cargaba bien pero no encontraba ninguna tarjeta. Gallito rediseñó su sitio — las clases HTML que usábamos para leer los avisos (`.contenedor-info`, etc.) ya no existen, las reemplazaron por una estructura totalmente distinta.
+
+Esto contaminó `data.json`: al no encontrar nada de Gallito, marcó como "posible baja" a los ~400 avisos de Gallito que estaban activos, aunque en realidad seguían publicados. Actualicé `scraper.py` para leer la nueva estructura del sitio y lo probé en vivo contra Gallito (venta y alquiler, varios casos: monoambientes, oficinas, barrios de una y varias palabras) — funciona correctamente. Cuando subas esta versión y corras el workflow de nuevo, Gallito debería volver a traer datos reales.
+
+**Importante**: por esta contaminación, después de confirmar que Gallito volvió a funcionar puede convenir reiniciar `data.json` de nuevo (igual que se hizo el 15/7), para no arrastrar esas ~400 bajas falsas al historial de Análisis.
+
 ## Casasymas (nuevo portal, primera versión)
 
 Pediste agregar también Veocasas, Mirando y Casasymas. Investigué los tres y ninguno se puede descargar de forma simple como InfoCasas:
