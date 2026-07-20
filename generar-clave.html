@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generar clave de acceso — Inmuebles Montevideo</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161c2c; --panel2:#1d2436; --border:#2a3247;
+    --text:#e8ecf4; --muted:#8b93a7; --accent:#4f8cff; --accent2:#63d3a6; --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);padding:28px 16px;}
+  .box{max-width:480px;margin:0 auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px;}
+  h1{font-size:18px;margin:0 0 6px;}
+  p.sub{color:var(--muted);font-size:13px;margin:0 0 20px;line-height:1.5;}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 5px;}
+  input{width:100%;padding:9px 11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;}
+  button{width:100%;margin-top:20px;padding:10px;background:var(--accent);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;}
+  button:hover{opacity:.9;}
+  .resultado{margin-top:20px;display:none;}
+  .resultado.show{display:block;}
+  .linea{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px;font-family:monospace;font-size:12.5px;word-break:break-all;color:var(--accent2);}
+  .instrucciones{margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6;}
+  .instrucciones b{color:var(--text);}
+  .instrucciones ol{padding-left:20px;margin:8px 0;}
+  .btncopy{background:var(--panel2);border:1px solid var(--border);color:var(--text);margin-top:10px;font-weight:400;font-size:12.5px;padding:8px;}
+  .err{color:var(--danger);font-size:13px;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Generar clave de acceso</h1>
+  <p class="sub">
+    Esto NO crea el usuario automáticamente — genera la línea que después tenés que
+    pegar vos mismo en el archivo <b>usuarios.json</b> del repositorio (editándolo
+    directo en la web de GitHub). La contraseña nunca sale de tu navegador, acá
+    solo se calcula el código (hash) que va a guardar.
+  </p>
+
+  <form id="form">
+    <label>Usuario (sin espacios)</label>
+    <input type="text" id="usuario" required>
+    <label>Contraseña</label>
+    <input type="password" id="pass" required>
+    <label>Repetir contraseña</label>
+    <input type="password" id="pass2" required>
+    <button type="submit">Generar línea</button>
+  </form>
+  <div class="err" id="err"></div>
+
+  <div class="resultado" id="resultado">
+    <label>Línea para pegar en usuarios.json</label>
+    <div class="linea" id="linea"></div>
+    <button type="button" class="btncopy" id="btnCopy">Copiar línea</button>
+
+    <div class="instrucciones">
+      <b>Cómo pegarla:</b>
+      <ol>
+        <li>Andá al repositorio en GitHub y abrí el archivo <b>usuarios.json</b> (dentro de la carpeta <b>sitio-web</b>).</li>
+        <li>Tocá el lápiz (editar) arriba a la derecha del archivo.</li>
+        <li>Si es un usuario <b>nuevo</b>: pegá la línea de arriba justo antes del <code>]</code> final, agregando una coma después de la línea anterior.</li>
+        <li>Si estás <b>cambiando la contraseña</b> de alguien que ya existe: buscá su línea actual y reemplazala entera por la nueva.</li>
+        <li>Guardá los cambios ("Commit changes").</li>
+      </ol>
+      Ese usuario va a poder entrar al sitio la próxima vez que lo intente (en cualquier dispositivo).
+    </div>
+  </div>
+</div>
+
+<script>
+async function sha256Hex(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+document.getElementById('form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const errEl = document.getElementById('err');
+  errEl.textContent = '';
+  const usuario = document.getElementById('usuario').value.trim();
+  const pass = document.getElementById('pass').value;
+  const pass2 = document.getElementById('pass2').value;
+
+  if(!usuario || /\s/.test(usuario)){
+    errEl.textContent = 'El usuario no puede estar vacío ni tener espacios.';
+    return;
+  }
+  if(pass.length < 6){
+    errEl.textContent = 'Usá una contraseña de al menos 6 caracteres.';
+    return;
+  }
+  if(pass !== pass2){
+    errEl.textContent = 'Las dos contraseñas no coinciden.';
+    return;
+  }
+
+  const hash = await sha256Hex(usuario + ':' + pass);
+  const linea = ' {"usuario": "' + usuario + '", "hash": "' + hash + '"},';
+  document.getElementById('linea').textContent = linea;
+  document.getElementById('resultado').classList.add('show');
+});
+
+document.getElementById('btnCopy').addEventListener('click', () => {
+  const texto = document.getElementById('linea').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btnCopy');
+    const original = btn.textContent;
+    btn.textContent = 'Copiado ✓';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+});
+</script>
+</body>
+</html>

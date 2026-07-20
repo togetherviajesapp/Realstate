@@ -84,18 +84,48 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
   @media (max-width:900px){.grid2{grid-template-columns:1fr;}}
   .chart-wrap h4{margin:0 0 12px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+
+  #appContent{display:none;}
+  .login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100;}
+  .login-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:32px 28px;width:100%;max-width:340px;}
+  .login-box h2{margin:0 0 4px;font-size:18px;}
+  .login-box .sub{color:var(--muted);font-size:13px;margin-bottom:20px;}
+  .login-box label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;margin-top:14px;}
+  .login-box input{width:100%;padding:9px 11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;}
+  .login-box button{width:100%;margin-top:20px;padding:10px;background:var(--accent);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;}
+  .login-box button:hover{opacity:.9;}
+  .login-error{color:var(--danger);font-size:13px;margin-top:12px;min-height:16px;}
+  .logout-link{color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
+  .logout-link:hover{color:var(--text);}
 </style>
 </head>
 <body>
 
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <h2>Inmuebles Montevideo</h2>
+    <div class="sub">Ingresá tu usuario y contraseña para ver el sitio.</div>
+    <form id="loginForm">
+      <label>Usuario</label>
+      <input type="text" id="loginUsuario" autocomplete="username" required>
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div id="appContent">
 <header>
   <div>
     <h1>Inmuebles Montevideo</h1>
-    <div class="sub">Venta y alquiler &middot; InfoCasas, Gallito y MercadoLibre &middot; actualizado: <span id="fechaActualizado">-</span></div>
+    <div class="sub">Venta y alquiler &middot; InfoCasas, Gallito, MercadoLibre, Casasymas y Veocasas &middot; actualizado: <span id="fechaActualizado">-</span></div>
   </div>
   <div class="tabs">
     <button class="tabbtn active" id="tabBuscador">Buscador</button>
     <button class="tabbtn" id="tabAnalisis">Análisis</button>
+    <button class="logout-link" id="btnLogout" style="margin-left:8px;">Cerrar sesión</button>
   </div>
 </header>
 
@@ -127,6 +157,8 @@
           <div class="chip" data-val="InfoCasas">InfoCasas</div>
           <div class="chip" data-val="Gallito">Gallito</div>
           <div class="chip" data-val="MercadoLibre">MercadoLibre</div>
+          <div class="chip" data-val="Casasymas">Casasymas</div>
+          <div class="chip" data-val="Veocasas">Veocasas</div>
         </div>
       </div>
 
@@ -252,9 +284,69 @@
   </div>
 </div>
 
-<footer>Datos de InfoCasas, Gallito y MercadoLibre &middot; uso personal &middot; se actualiza automáticamente cada semana</footer>
+<footer>Datos de InfoCasas, Gallito, MercadoLibre, Casasymas y Veocasas &middot; uso personal &middot; se actualiza automáticamente lunes, miércoles y viernes</footer>
+
+</div>
 
 <script>
+// --- Login (protección simple del lado del cliente, ver GUIA_PUBLICACION.md) ---
+async function sha256Hex(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function mostrarApp(){
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+  init().catch(e => {
+    console.error(e);
+    document.getElementById('tableWrap').innerHTML =
+      '<div class="empty">Hubo un error cargando los datos: ' + e.message + '</div>';
+  });
+}
+
+async function intentarLogin(usuario, pass){
+  const errorEl = document.getElementById('loginError');
+  errorEl.textContent = '';
+  try {
+    const res = await fetch('usuarios.json?_=' + Date.now());
+    const usuarios = await res.json();
+    const hash = await sha256Hex(usuario.trim() + ':' + pass);
+    const ok = usuarios.some(u => u.usuario === usuario.trim() && u.hash === hash);
+    if(ok){
+      localStorage.setItem('vf_auth', 'ok');
+      localStorage.setItem('vf_user', usuario.trim());
+      mostrarApp();
+    } else {
+      errorEl.textContent = 'Usuario o contraseña incorrectos.';
+    }
+  } catch(e){
+    console.error(e);
+    errorEl.textContent = 'No se pudo verificar el acceso. Probá de nuevo.';
+  }
+}
+
+document.getElementById('loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const usuario = document.getElementById('loginUsuario').value;
+  const pass = document.getElementById('loginPass').value;
+  intentarLogin(usuario, pass);
+});
+
+if(localStorage.getItem('vf_auth') === 'ok'){
+  mostrarApp();
+}
+
+document.addEventListener('click', e => {
+  if(e.target && e.target.id === 'btnLogout'){
+    localStorage.removeItem('vf_auth');
+    localStorage.removeItem('vf_user');
+    location.reload();
+  }
+});
+// --- fin login ---
+
 let DATA = {listado: [], historico: [], bajas_historico: [], actualizado: '', resumen_ultima_corrida: {}};
 let sortKey = 'ultima_vez_visto', sortDir = -1;
 let page = 1;
@@ -662,12 +754,6 @@ async function init(){
   try { renderChart(); } catch(e) { console.error('Error dibujando el grafico:', e); }
   render();
 }
-
-init().catch(e => {
-  console.error(e);
-  document.getElementById('tableWrap').innerHTML =
-    '<div class="empty">Hubo un error cargando los datos: ' + e.message + '</div>';
-});
 </script>
 </body>
 </html>

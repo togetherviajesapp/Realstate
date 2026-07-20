@@ -33,7 +33,7 @@ Esa es la URL que vas a poder abrir desde cualquier dispositivo.
 
 ## Paso 3 — Instalar el runner en tu computadora (necesario para Gallito y MercadoLibre)
 
-Gallito y MercadoLibre bloquean el tráfico que sale de las máquinas de GitHub (ver "Limitaciones conocidas" más abajo). Para evitar ese bloqueo, la tarea semanal ahora corre **desde tu propia computadora** en vez de en la nube de GitHub — usa tu conexión a internet normal, la misma con la que navegás vos. Es gratis, pero tu PC tiene que estar prendida y conectada a internet los lunes a las 10am (hora Uruguay), o vas a tener que correrla vos a mano ese día cuando puedas.
+Gallito y MercadoLibre bloquean el tráfico que sale de las máquinas de GitHub (ver "Limitaciones conocidas" más abajo). Para evitar ese bloqueo, la tarea semanal ahora corre **desde tu propia computadora** en vez de en la nube de GitHub — usa tu conexión a internet normal, la misma con la que navegás vos. Es gratis, pero tu PC tiene que estar prendida y conectada a internet los lunes, miércoles y viernes a las 10am (hora Uruguay), o vas a tener que correrla vos a mano ese día cuando puedas.
 
 Esto requiere una instalación única (30-40 minutos la primera vez). Pasos:
 
@@ -56,7 +56,7 @@ Esto requiere una instalación única (30-40 minutos la primera vez). Pasos:
 1. Volvé a **Settings > Actions > Runners** en GitHub.
 2. Deberías ver tu computadora listada con un punto verde ("Idle" = esperando tareas).
 
-Con esto ya está. Mientras tu PC esté prendida y conectada, la tarea semanal (lunes 10am) va a correr sola en segundo plano, sin que tengas que abrir nada. Si tu PC está apagada ese día, la tarea queda esperando y corre apenas la prendas y se conecte a internet (o la podés disparar vos a mano, ver abajo).
+Con esto ya está. Mientras tu PC esté prendida y conectada, la tarea (lunes, miércoles y viernes 10am) va a correr sola en segundo plano, sin que tengas que abrir nada. Si tu PC está apagada ese día, la tarea queda esperando y corre apenas la prendas y se conecte a internet (o la podés disparar vos a mano, ver abajo).
 
 ## Paso 4 — Probar la tarea manualmente
 
@@ -74,6 +74,9 @@ Si sale con error, copiá el mensaje y pasámelo para que lo revise contigo.
 - `scraper.py` — descarga avisos de InfoCasas (pedido normal) y Gallito (navegador simulado, porque ese portal bloquea las descargas simples)
 - `scraper_ml.py` — descarga avisos de MercadoLibre (usa un navegador simulado porque ese sitio bloquea las descargas simples)
 - `scraper_casasymas.py` — descarga avisos de Casasymas, filtrados a Montevideo (navegador simulado; ver "Casasymas" más abajo — es la primera versión, puede necesitar ajustes)
+- `scraper_veocasas.py` — descarga avisos de Veocasas, filtrados a Montevideo (navegador simulado; ver "Veocasas" más abajo)
+- `usuarios.json` — lista de usuarios habilitados para entrar al sitio (ver "Acceso con usuario y contraseña" más abajo)
+- `generar-clave.html` — página para generar la línea que se pega en `usuarios.json` al agregar o cambiar un usuario
 - `process.py` — compara lo nuevo contra lo anterior y arma `data.json` (incluye el historial de precio por aviso y el registro acumulado de bajas)
 - `barrios.py` — cuando el portal informa una dirección en vez de un barrio, la reconoce y le asigna el barrio real (ver más abajo)
 - `export_excel.py` — genera `Reporte_Inmuebles_Montevideo.xlsx` a partir de `data.json` en cada corrida (ver "Excel automático" más abajo)
@@ -116,6 +119,12 @@ Antes del 15/7, los datos de "nuevos", "bajas" y variación de precio mezclaban 
 
 Por eso `data.json` se reinició: la corrida del 15/7 (858 avisos, 100% de éxito en los tres portales) pasó a ser el nuevo punto de partida. Todos los avisos activos quedaron marcados como "Nuevo" desde esa fecha, y el registro de bajas y variación de precio arranca de cero. A partir de acá, cada corrida semanal compara contra un dato confiable, así que los gráficos de la pestaña Análisis van a reflejar cambios reales del mercado, no ruido técnico.
 
+## Segundo reinicio del historial (20/7/2026)
+
+Después de arreglar Gallito, MercadoLibre y la paginación de Casasymas (ver secciones siguientes), volví a reiniciar `data.json` por el mismo motivo que el 15/7: dos regresiones seguidas (Gallito en 0% y después MercadoLibre en 0%) habían marcado como "posible baja" a cientos de avisos que en realidad seguían publicados, contaminando el historial de Análisis.
+
+Usé la corrida #17 (20/7, con los cuatro portales funcionando: InfoCasas, Gallito, MercadoLibre y Casasymas) como nuevo punto de partida: **1.251 avisos activos**, todos marcados "Nuevo" desde hoy, sin bajas ni variación de precio en el historial. A partir de esta corrida, los gráficos de Análisis vuelven a reflejar cambios reales del mercado.
+
 ## Gallito cambió de diseño (20/7/2026)
 
 La corrida del 20/7 dio 0 avisos de Gallito en las 10 páginas (antes venía dando 100%). No fue un timeout: la página cargaba bien pero no encontraba ninguna tarjeta. Gallito rediseñó su sitio — las clases HTML que usábamos para leer los avisos (`.contenedor-info`, etc.) ya no existen, las reemplazaron por una estructura totalmente distinta.
@@ -137,9 +146,9 @@ Le agregué varias capas de disimulo a `scraper_ml.py` para intentar evitarlo:
 
 Agregué `python -m playwright install chrome` al workflow para que el runner tenga Chrome real disponible.
 
-**No hay garantía de que esto alcance** — MercadoLibre puede tener un sistema antibot más sofisticado que cualquier disfraz. Vamos a saberlo recién en la próxima corrida real. Si sigue fallando, la alternativa es dejarlo pausado (`continue-on-error: true` ya está puesto, así que aunque falle no frena el resto del workflow) y excluirlo de los datos.
+**Resultado (corrida #15, 20/7/2026): funcionó.** MercadoLibre volvió a traer datos — 288 avisos (48/48 en las 6 páginas), sin ningún muro de verificación. Junto con InfoCasas y Gallito, también al 100%, los tres portales originales quedaron sanos otra vez.
 
-Además, por la contaminación de dos regresiones seguidas (Gallito y luego MercadoLibre marcando cientos de avisos activos como "posible baja"), conviene reiniciar `data.json` una vez que confirmemos si MercadoLibre volvió a funcionar o no.
+Por la contaminación de las dos regresiones seguidas (Gallito y luego MercadoLibre marcando cientos de avisos activos como "posible baja" por error), corresponde reiniciar `data.json` ahora que los tres portales están confirmados funcionando, para no arrastrar esas bajas falsas al historial de Análisis.
 
 ## Casasymas (nuevo portal, primera versión)
 
@@ -149,17 +158,49 @@ Pediste agregar también Veocasas, Mirando y Casasymas. Investigué los tres y n
 - **Mirando**: no es un catálogo navegable — es un buscador con IA orientado a cuentas de usuario (alertas, favoritos). Puede que no tenga una vista pública para scrapear.
 - **Casasymas**: tiene un endpoint de datos interno, pero llamarlo directo (sin pasar por la página real) hace que el servidor deje el pedido colgado indefinidamente — una protección antibot. Sí funciona si se simulan los clicks reales de un usuario (elegir "Montevideo" en el filtro, clickear "Buscar"), así que `scraper_casasymas.py` hace eso con un navegador simulado, igual que Gallito.
 
-Empecé por Casasymas porque era el más viable. Es la **primera versión**: el sitio no usa nombres de clase descriptivos en sus tarjetas de avisos, así que identificar precio/tipo/zona de cada aviso se basa en el orden y el contenido del texto visible, no en algo tan estable como en otros portales. Puede necesitar ajustes después de ver los resultados de la primera corrida real (igual que pasó con Gallito al principio) — así que prestale especial atención al log de esa corrida.
+Empecé por Casasymas porque era el más viable. Es la **primera versión**: el sitio no usa nombres de clase descriptivos en sus tarjetas de avisos, así que identificar precio/tipo/zona de cada aviso se basa en el orden y el contenido del texto visible, no en algo tan estable como en otros portales.
 
-Veocasas y Mirando quedan pendientes para una próxima sesión.
+**Arreglo de paginación (20/7/2026):** la primera versión simulaba clicks en "página siguiente", y eso fallaba de forma intermitente (algunas páginas devolvían 0 avisos sin motivo aparente). Investigando en vivo encontré que el sitio en realidad tiene una URL real por página (por ejemplo `casasymas.com.uy/propiedades/venta/montevideo/pagina-3`), aunque no era evidente navegando con clicks. Reescribí el scraper para ir directo a esa URL en cada página — igual que InfoCasas y Gallito — en vez de simular clicks de paginación. Es más simple y no debería tener más huecos.
+
+Mirando queda pendiente (no es un catálogo navegable). **Veocasas se agregó el 20/7** — ver sección siguiente.
+
+## Veocasas (nuevo portal, 20/7/2026)
+
+En la sesión anterior había quedado descartado por parecer una SPA sin ninguna URL de referencia para paginar. Investigando de nuevo encontré dos cosas:
+
+1. El dominio real es `veocasas.com` (sin ".uy") — `veocasas.com.uy` solo redirige, y mi navegador lo bloqueaba por una protección de seguridad que detectaba un token de sesión en esa página (no era un problema del sitio, era mi propia herramienta).
+2. Al revisar el sitio real con tu ayuda, confirmamos que **sí tiene paginación por URL**: `veocasas.com/properties?location=1&recenter=1&page=N` (venta) y lo mismo con `&operation=RENT` para alquiler. El parámetro `location=1` ya filtra a Montevideo.
+
+Con eso, `scraper_veocasas.py` navega directo a cada página igual que los demás portales. El sitio no muestra el barrio como campo separado, así que se intenta reconocer el nombre de un barrio oficial de Montevideo dentro del título del aviso (si no aparece ninguno, se deja vacío en vez de adivinar).
 
 ## Excel automático
 
 Cada corrida semanal ahora genera también `Reporte_Inmuebles_Montevideo.xlsx` (en la raíz del repo), a partir de los mismos datos que muestra el sitio web. Tiene las hojas: Listado actual, Posibles bajas, Historico semanal y Resumen y Gráfica (con las mismas fórmulas y gráficos de evolución que tenía el Excel original). Se commitea junto con `data.json` en cada corrida, así que después de cada lunes vas a tener la versión más reciente para descargar desde GitHub.
 
+## Acceso con usuario y contraseña (20/7/2026)
+
+El sitio ahora pide usuario y contraseña antes de mostrar nada. Usuarios iniciales: `gramirez` y `vferreira`.
+
+**Importante sobre qué tipo de protección es esta.** GitHub Pages (donde vive el sitio) es 100% gratis pero no tiene forma de pedir login de verdad — es solo HTML/JS que corre en tu navegador, sin ningún servidor propio atrás. Evaluamos las alternativas con protección real (Cloudflare Access, un dominio propio) pero requerían comprar un dominio (~10-15 USD/año), así que optamos por esta versión casera:
+
+- Las contraseñas se guardan como un código (hash SHA-256), no en texto plano — alguien que abra el código de la página no ve la contraseña directamente escrita.
+- Pero **no es seguridad real**: alguien con conocimientos técnicos podría revertir ese código. Sirve para que no entre cualquiera que llegue al link por casualidad (por ejemplo, si se indexa en un buscador o se comparte sin querer), no para proteger información sensible de un atacante decidido.
+- Una vez que alguien pone bien el usuario y contraseña en un dispositivo, queda recordado ahí (no hay que volver a escribirlo cada vez que entra desde ese mismo celular o PC). Hay un link "Cerrar sesión" arriba a la derecha por si querés que vuelva a pedir el login en ese dispositivo.
+
+**Para agregar una persona nueva o cambiar una contraseña:**
+1. Abrí `generar-clave.html` (`https://togetherviajesapp.github.io/Realstate/generar-clave.html`).
+2. Escribí el usuario y la contraseña (dos veces, para confirmar) y tocá "Generar línea".
+3. Copiá la línea que aparece.
+4. Andá al archivo `usuarios.json` en GitHub, tocá el lápiz para editarlo.
+   - Si es alguien **nuevo**: pegá la línea antes del `]` final, con una coma después de la línea anterior.
+   - Si es un **cambio de contraseña** de alguien que ya existe: reemplazá su línea entera por la nueva.
+5. Guardá los cambios ("Commit changes"). Ya puede entrar con la nueva clave.
+
+No hay una forma de que cada persona cambie su propia contraseña desde el sitio (necesitaría un servidor, que es justo lo que estamos evitando por el costo) — los cambios de contraseña se hacen siempre así, editando `usuarios.json`.
+
 ## Limitaciones conocidas
 
 - **Gallito bloqueaba los pedidos normales (error 403), incluso desde tu propia conexión** — no era solo un tema de IP de GitHub, sino que el sitio detecta pedidos que no vienen de un navegador real. Por eso Gallito se descarga con un navegador simulado (igual que MercadoLibre).
 - MercadoLibre: cobertura parcial (3 páginas por operación). El scraper busca de forma más amplia el link real de cada aviso; cuando ese portal no lo expone en la tarjeta, el sitio muestra "Sin link" en vez de un link genérico equivocado.
-- Como solo se scrapean las primeras páginas de cada portal (5 para InfoCasas/Gallito, 3 para MercadoLibre), un aviso puede "desaparecer" de la corrida simplemente porque quedó más atrás en el orden del portal (por avisos nuevos empujándolo), no porque se haya vendido/alquilado o dado de baja. Por eso la pestaña Análisis siempre lo muestra como "posible" venta/alquiler, nunca como confirmado.
-- **Tu computadora tiene que estar prendida y conectada** los lunes a las 10am para que la tarea corra sola. Si está apagada, la tarea queda pendiente hasta que la prendas (o la corrés vos a mano desde Actions).
+- Como solo se scrapean las primeras páginas de cada portal (5 para InfoCasas/Gallito/Casasymas/Veocasas, 3 para MercadoLibre), un aviso puede "desaparecer" de la corrida simplemente porque quedó más atrás en el orden del portal (por avisos nuevos empujándolo), no porque se haya vendido/alquilado o dado de baja. Por eso la pestaña Análisis siempre lo muestra como "posible" venta/alquiler, nunca como confirmado.
+- **Tu computadora tiene que estar prendida y conectada** los lunes, miércoles y viernes a las 10am para que la tarea de actualización corra sola (esto es solo para traer datos nuevos — para ver el sitio no hace falta, ver más abajo). Si está apagada, la tarea queda pendiente hasta que la prendas (o la corrés vos a mano desde Actions).
