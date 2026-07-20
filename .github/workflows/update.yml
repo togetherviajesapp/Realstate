@@ -36,12 +36,17 @@ jobs:
         continue-on-error: true
         run: python scraper_casasymas.py --out data/raw_casasymas.csv --paginas 5
 
+      - name: Descargar Veocasas
+        continue-on-error: true
+        run: python scraper_veocasas.py --out data/raw_veocasas.csv --paginas 5
+
       - name: Procesar y actualizar data.json
         run: |
           $FECHA = Get-Date -Format "yyyy-MM-dd"
           $CSVS = @("data/raw_infocasas_gallito.csv")
           if (Test-Path data/raw_mercadolibre.csv) { $CSVS += "data/raw_mercadolibre.csv" }
           if (Test-Path data/raw_casasymas.csv) { $CSVS += "data/raw_casasymas.csv" }
+          if (Test-Path data/raw_veocasas.csv) { $CSVS += "data/raw_veocasas.csv" }
           python process.py --csvs $CSVS --data data.json --fecha $FECHA
 
       - name: Generar Excel del reporte
