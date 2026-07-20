@@ -220,10 +220,6 @@
     </aside>
 
     <div class="main">
-      <div class="chart-wrap">
-        <canvas id="chartHist" height="70"></canvas>
-      </div>
-
       <div class="toolbar">
         <input type="text" id="fBuscar" placeholder="Buscar por título o dirección...">
         <div class="count" id="resultCount">-</div>
@@ -252,6 +248,11 @@
         <div class="chip" data-val="venta">Venta</div>
         <div class="chip" data-val="alquiler">Alquiler</div>
       </div>
+    </div>
+
+    <div class="chart-wrap">
+      <h4>Avisos activos en el tiempo (venta y alquiler)</h4>
+      <canvas id="chartHist" height="70"></canvas>
     </div>
 
     <div class="cards" style="padding:0 0 20px;">
@@ -354,7 +355,7 @@ const PAGE_SIZE = 40;
 
 const state = { operacion: '', portal: '', estado: '', tipo: [], barrio: [], moneda: '', dorm: '', pmin: '', pmax: '', q: '' };
 const analisisState = { operacion: '' };
-let chartVariacionInstance = null, chartTipoInstance = null, chartBarrioInstance = null;
+let chartVariacionInstance = null, chartTipoInstance = null, chartBarrioInstance = null, chartHistInstance = null;
 
 function fmtPrice(row){
   if(!row.precio_valor) return '-';
@@ -525,7 +526,8 @@ function renderChart(){
   });
   const fechas = Object.keys(byDate).sort();
   const ctx = document.getElementById('chartHist');
-  new Chart(ctx, {
+  if(chartHistInstance) chartHistInstance.destroy();
+  chartHistInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: fechas,
@@ -683,6 +685,8 @@ function renderAnalisis(){
   const op = analisisState.operacion;
   const bajas = (DATA.bajas_historico || []).filter(b => !op || b.operacion === op);
 
+  try { renderChart(); } catch(e) { console.error('Error dibujando el grafico de activos en el tiempo:', e); }
+
   document.getElementById('aTotalBajas').textContent = bajas.length;
 
   const diasList = bajas.map(b => b.dias_publicado).filter(d => d !== null && d !== undefined);
@@ -751,7 +755,6 @@ async function init(){
     render();
   });
 
-  try { renderChart(); } catch(e) { console.error('Error dibujando el grafico:', e); }
   render();
 }
 </script>
