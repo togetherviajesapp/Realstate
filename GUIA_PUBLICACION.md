@@ -124,6 +124,23 @@ Esto contaminó `data.json`: al no encontrar nada de Gallito, marcó como "posib
 
 **Importante**: por esta contaminación, después de confirmar que Gallito volvió a funcionar puede convenir reiniciar `data.json` de nuevo (igual que se hizo el 15/7), para no arrastrar esas ~400 bajas falsas al historial de Análisis.
 
+## MercadoLibre pidió verificar cuenta (20/7/2026)
+
+Después de arreglar Gallito, la misma corrida mostró MercadoLibre en 0%: en vez de tardar o no encontrar avisos, redirigía a una página de "verificación de cuenta" pidiendo iniciar sesión. Comprobé navegando manualmente (con tu Chrome, sin automatizar nada) que el sitio carga perfecto y no pide login — el bloqueo es específicamente contra la sesión automatizada, no un requisito general del sitio ni un bloqueo de tu IP.
+
+Le agregué varias capas de disimulo a `scraper_ml.py` para intentar evitarlo:
+
+- Un "disfraz" más completo del navegador automatizado (antes solo tapaba 2-3 señales obvias, ahora también WebGL, memoria, plugins, permisos, etc.).
+- Intenta usar Chrome real en vez del Chromium que trae Playwright (más parecido a un navegador de verdad). Si Chrome no está instalado en tu PC, cae de nuevo a Chromium sin romperse.
+- "Entrada en calor": ahora visita la portada de MercadoLibre antes de ir directo al listado, como haría una persona.
+- Movimientos de mouse y scroll simulados, y pausas variables en vez de siempre la misma cantidad de segundos.
+
+Agregué `python -m playwright install chrome` al workflow para que el runner tenga Chrome real disponible.
+
+**No hay garantía de que esto alcance** — MercadoLibre puede tener un sistema antibot más sofisticado que cualquier disfraz. Vamos a saberlo recién en la próxima corrida real. Si sigue fallando, la alternativa es dejarlo pausado (`continue-on-error: true` ya está puesto, así que aunque falle no frena el resto del workflow) y excluirlo de los datos.
+
+Además, por la contaminación de dos regresiones seguidas (Gallito y luego MercadoLibre marcando cientos de avisos activos como "posible baja"), conviene reiniciar `data.json` una vez que confirmemos si MercadoLibre volvió a funcionar o no.
+
 ## Casasymas (nuevo portal, primera versión)
 
 Pediste agregar también Veocasas, Mirando y Casasymas. Investigué los tres y ninguno se puede descargar de forma simple como InfoCasas:
