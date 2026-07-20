@@ -2,21 +2,21 @@
 """
 Scraper de Casasymas.com.uy (Montevideo, venta + alquiler), via Playwright.
 
-Casasymas es una app moderna (SPA): la paginacion no cambia la URL y el
-endpoint de datos interno (/propiedades-data) esta protegido -- llamarlo
-directo desde un script (sin pasar por la interaccion real de la pagina)
-hace que el servidor deje el pedido "colgado" indefinidamente, probablemente
-una medida antibot. Por eso este scraper no llama a esa API: abre la pagina
-con un navegador real, aplica el filtro de Departamento=Montevideo con clicks
-reales (igual que haria una persona) y lee las tarjetas resultantes del DOM,
-igual que se hace con Gallito.
+20/7/2026: hasta ahora este scraper aplicaba el filtro "Departamento =
+Montevideo" con clicks reales (simulando a una persona) y despues clickeaba
+la flecha de "pagina siguiente" varias veces. Ese click de paginacion fallaba
+de forma intermitente (paginas devolviendo 0 avisos sin motivo aparente,
+sobre todo la 2da-3ra pagina), probablemente porque la tarjeta todavia no
+habia terminado de re-renderizarse cuando leiamos el DOM.
 
-IMPORTANTE (primera version, heuristica): el sitio no usa nombres de clase
-descriptivos en las tarjetas (las clases estan vacias u ofuscadas), asi que
-la extraccion de precio/tipo/zona se basa en el ORDEN y CONTENIDO del texto
-visible, no en selectores CSS estables. Es razonablemente robusto pero puede
-necesitar ajustes despues de ver una corrida real (igual que paso con Gallito
-al principio).
+Investigando en vivo encontre que el sitio en realidad SI tiene una URL
+real por pagina (aunque no lo parecia navegando con clicks): por ejemplo
+https://www.casasymas.com.uy/propiedades/venta/montevideo/pagina-3 carga
+directo, con el filtro de Montevideo ya aplicado por el propio path de la
+URL. Es mucho mas simple y confiable navegar directo a esa URL en cada
+pagina (igual que se hace con InfoCasas y Gallito) que simular clicks de
+paginacion -- asi que este scraper ya no aplica ningun filtro por click,
+solo visita cada URL de pagina directamente.
 
 Uso:
     python scraper_casasymas.py --out data/raw_casasymas.csv --paginas 5
@@ -31,8 +31,8 @@ import time
 from playwright.sync_api import sync_playwright
 
 BASE = {
-    "venta": "https://www.casasymas.com.uy/propiedades/venta",
-    "alquiler": "https://www.casasymas.com.uy/propiedades/alquiler",
+    "venta": "https://www.casasymas.com.uy/propiedades/venta/montevideo",
+    "alquiler": "https://www.casasymas.com.uy/propiedades/alquiler/montevideo",
 }
 
 STEALTH_JS = """
@@ -61,6 +61,11 @@ def bloquear_recursos_innecesarios(route):
 TIPOS = ["Apartamento", "Casa", "Oficina", "Local Comercial", "Local", "Terreno",
          "Garage", "Chacra", "Edificio", "Galpón", "Piso", "Pieza", "Cochera",
          "Depósito"]
+
+
+def page_url(base, n):
+    """Pagina 1 es la URL base; de ahi en mas se agrega /pagina-N."""
+    return base if n == 1 else f"{base}/pagina-{n}"
 
 
 def extract_casasymas_cards(page):
@@ -207,47 +212,40 @@ def _nuevo_contexto(browser):
     return context
 
 
-def aplicar_filtro_montevideo(page):
-    """Abre el filtro 'Departamento', elige Montevideo y confirma con 'Buscar'.
-    Usa clicks reales (no JS) porque la app solo reacciona a eventos de
-    usuario genuinos -- un .click() disparado desde JS no abre el desplegable."""
-    dep_input = page.locator("label", has_text="Departamento").locator("xpath=..").locator("input")
-    dep_input.click()
-    page.get_by_text("Montevideo", exact=True).first.click(timeout=10000)
-    page.locator("button.fuzzy-search__submit").click()
-
-
-def cargar_casasymas(browser, operacion, paginas=5, intentos=3):
+def cargar_pagina_casasymas(page, url, intentos=2):
+    """Navega directo a la URL de una pagina especifica y espera a que
+    aparezcan las tarjetas. Reintenta si la primera pasada falla."""
     for intento in range(1, intentos + 1):
-        context = _nuevo_contexto(browser)
-        page = context.new_page()
-        rows = []
         try:
-            page.goto(BASE[operacion], timeout=60000, wait_until="domcontentloaded")
-            aplicar_filtro_montevideo(page)
+            page.goto(url, timeout=60000, wait_until="domcontentloaded")
             page.wait_for_selector("article", timeout=20000, state="attached")
-            time.sleep(1.5)
-
-            for n in range(1, paginas + 1):
-                items = extract_casasymas_cards(page)
-                page_rows = parse_casasymas_items(items, operacion)
-                print(f"    pagina {n}: {len(page_rows)} avisos ({operacion})", file=sys.stderr)
-                rows.extend(page_rows)
-                if n < paginas:
-                    next_links = page.locator("a.page-link")
-                    count = next_links.count()
-                    if count == 0:
-                        break
-                    next_links.nth(count - 1).click()
-                    time.sleep(2.5)
-            context.close()
-            return rows
+            time.sleep(1)
+            return True
         except Exception as e:
-            print(f"  [warn] intento {intento}/{intentos} Casasymas {operacion} -> {e}", file=sys.stderr)
-            context.close()
+            print(f"  [warn] intento {intento}/{intentos} {url} -> {e}", file=sys.stderr)
             if intento < intentos:
                 time.sleep(3)
-    return rows if rows else []
+    return False
+
+
+def cargar_casasymas(browser, operacion, paginas=5):
+    context = _nuevo_contexto(browser)
+    page = context.new_page()
+    rows = []
+    try:
+        for n in range(1, paginas + 1):
+            url = page_url(BASE[operacion], n)
+            if not cargar_pagina_casasymas(page, url):
+                print(f"    pagina {n}: no se pudo cargar, se omite ({operacion})", file=sys.stderr)
+                continue
+            items = extract_casasymas_cards(page)
+            page_rows = parse_casasymas_items(items, operacion)
+            print(f"    pagina {n}: {len(page_rows)} avisos ({operacion})", file=sys.stderr)
+            rows.extend(page_rows)
+            time.sleep(1.5)
+    finally:
+        context.close()
+    return rows
 
 
 def main():
