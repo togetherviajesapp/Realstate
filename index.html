@@ -293,7 +293,7 @@
 // --- Registro de uso: ingresos y búsquedas (ver GUIA_PUBLICACION.md) ---
 // Pegá acá la URL de tu Google Apps Script publicado como "Aplicación web" (termina en /exec).
 // Si queda vacío, simplemente no se registra nada (no rompe el sitio).
-const TRACK_URL = '';
+const TRACK_URL = 'https://script.google.com/macros/s/AKfycbzddKNTESXUB1EIt8Q9j0IuJ3xZyJLI3y9lBhuK-1mIvrG448wpHVj1bh5csVnSsWPP3A/exec';
 
 function trackEvent(evento, detalle){
   if(!TRACK_URL || TRACK_URL.indexOf('http') !== 0) return;
