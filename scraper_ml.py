@@ -3,6 +3,14 @@
 Scraper de MercadoLibre (Uruguay) para Montevideo, vía Playwright headless.
 MercadoLibre bloquea requests simples (anti-bot), por eso usa un navegador real.
 
+20/7/2026: MercadoLibre empezo a mostrar un muro de "verificacion de cuenta"
+(login wall) especificamente a la sesion automatizada -- el mismo sitio, con
+la misma IP, carga perfecto en un navegador manual. Este archivo agrega
+varias capas de disimulo (fingerprint mas realista, navegacion "tibia" por
+la home antes de ir al listado, pausas variables, scroll simulado) para
+intentar evitarlo. No hay garantia de que alcance: si el bloqueo vuelve a
+aparecer, el proximo paso seria pausar este portal.
+
 Uso:
     python scraper_ml.py --out data/raw_mercadolibre.csv --paginas 3
 """
@@ -10,6 +18,7 @@ import argparse
 import csv
 import hashlib
 import os
+import random
 import re
 import sys
 import time
@@ -20,14 +29,64 @@ BASE = {
     "venta": "https://listado.mercadolibre.com.uy/inmuebles/venta/montevideo/",
     "alquiler": "https://listado.mercadolibre.com.uy/inmuebles/alquiler/montevideo/",
 }
+HOME_URL = "https://www.mercadolibre.com.uy/"
 
 # se ejecuta en el navegador antes de que cargue cualquier pagina: intenta
-# ocultar las señales mas obvias de que es un navegador automatizado
+# ocultar las señales mas obvias de que es un navegador automatizado.
+# Version ampliada (20/7/2026) -- la version anterior solo tapaba
+# navigator.webdriver/languages/plugins, que ya no alcanza.
 STEALTH_JS = """
 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-Object.defineProperty(navigator, 'languages', { get: () => ['es-UY', 'es'] });
-Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-window.chrome = window.chrome || { runtime: {} };
+Object.defineProperty(navigator, 'languages', { get: () => ['es-UY', 'es', 'en'] });
+Object.defineProperty(navigator, 'plugins', {
+    get: () => [
+        { name: 'PDF Viewer', filename: 'internal-pdf-viewer' },
+        { name: 'Chrome PDF Viewer', filename: 'internal-pdf-viewer' },
+        { name: 'Chromium PDF Viewer', filename: 'internal-pdf-viewer' },
+        { name: 'Microsoft Edge PDF Viewer', filename: 'internal-pdf-viewer' },
+        { name: 'WebKit built-in PDF', filename: 'internal-pdf-viewer' },
+    ]
+});
+Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
+Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
+Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+Object.defineProperty(navigator, 'connection', {
+    get: () => ({ effectiveType: '4g', rtt: 50, downlink: 10, saveData: false })
+});
+window.chrome = window.chrome || {};
+window.chrome.runtime = window.chrome.runtime || {
+    connect: () => {}, sendMessage: () => {}, onMessage: { addListener: () => {} }
+};
+window.chrome.app = window.chrome.app || { isInstalled: false };
+window.chrome.csi = window.chrome.csi || (() => {});
+window.chrome.loadTimes = window.chrome.loadTimes || (() => {});
+
+const originalQuery = window.navigator.permissions.query;
+window.navigator.permissions.query = (parameters) => (
+    parameters && parameters.name === 'notifications'
+        ? Promise.resolve({ state: Notification.permission })
+        : originalQuery(parameters)
+);
+
+// WebGL vendor/renderer: en Chromium headless suelen quedar en valores
+// genericos ("Google Inc." / "SwiftShader") que delatan automatizacion.
+const getParameterOriginal = WebGLRenderingContext.prototype.getParameter;
+WebGLRenderingContext.prototype.getParameter = function (parameter) {
+    if (parameter === 37445) return 'Intel Inc.';
+    if (parameter === 37446) return 'Intel Iris OpenGL Engine';
+    return getParameterOriginal.apply(this, [parameter]);
+};
+
+Object.defineProperty(screen, 'availWidth', { get: () => 1366 });
+Object.defineProperty(screen, 'availHeight', { get: () => 728 });
+
+// enmascara que las funciones de arriba fueron redefinidas (toString nativo)
+const nativeToString = Function.prototype.toString;
+Function.prototype.toString = function () {
+    if (this === window.navigator.permissions.query) return 'function query() { [native code] }';
+    if (this === WebGLRenderingContext.prototype.getParameter) return 'function getParameter() { [native code] }';
+    return nativeToString.call(this);
+};
 """
 
 # Dominios de publicidad/analytics que suelen frenar la carga de paginas
@@ -49,6 +108,26 @@ def bloquear_recursos_innecesarios(route):
     if any(dominio in req.url for dominio in DOMINIOS_BLOQUEADOS):
         return route.abort()
     return route.continue_()
+
+
+def espera(a, b):
+    """Pausa con variacion aleatoria (en vez de un sleep fijo, que es una
+    señal de comportamiento robotico)."""
+    time.sleep(random.uniform(a, b))
+
+
+def humanizar(page):
+    """Simula un poco de actividad de una persona real (mover el mouse,
+    scrollear) antes de leer la pagina. No garantiza nada contra un sistema
+    antibot serio, pero es barato y puede ayudar."""
+    try:
+        for _ in range(random.randint(2, 4)):
+            page.mouse.move(random.randint(50, 1200), random.randint(50, 800))
+            time.sleep(random.uniform(0.15, 0.4))
+        page.mouse.wheel(0, random.randint(400, 1200))
+        time.sleep(random.uniform(0.3, 0.7))
+    except Exception:
+        pass
 
 
 def page_url(base, n):
@@ -152,22 +231,50 @@ def diagnosticar_bloqueo(page, url):
         print(f"  [diag] no se pudo inspeccionar la pagina: {e}", file=sys.stderr)
 
 
+def es_muro_de_verificacion(page):
+    try:
+        return "account-verification" in page.url or "ingresa a" in (
+            page.evaluate("document.body ? document.body.innerText.slice(0, 300) : ''") or ""
+        ).lower()
+    except Exception:
+        return False
+
+
 def cargar_pagina_ml(page, url, intentos=2):
     """Navega a una pagina de MercadoLibre y espera a que aparezcan las
     tarjetas. Reintenta una vez mas si la primera pasada falla, antes de
     darse por vencido."""
     for intento in range(1, intentos + 1):
         try:
-            page.goto(url, timeout=60000, wait_until="domcontentloaded")
+            page.goto(url, timeout=60000, wait_until="domcontentloaded", referer=HOME_URL)
+            humanizar(page)
             page.wait_for_selector(".ui-search-layout__item", timeout=20000)
             return True
         except Exception as e:
             print(f"  [warn] intento {intento}/{intentos} {url} -> {e}", file=sys.stderr)
+            if es_muro_de_verificacion(page):
+                print("  [warn] muro de verificacion de cuenta detectado", file=sys.stderr)
             if intento < intentos:
-                time.sleep(3)
+                espera(3, 6)
             else:
                 diagnosticar_bloqueo(page, url)
     return False
+
+
+def crear_browser(p):
+    """Intenta lanzar Chrome real (fingerprint mas creible que el Chromium
+    que trae Playwright); si no esta instalado en la maquina, usa Chromium."""
+    args = [
+        "--disable-blink-features=AutomationControlled",
+        "--disable-dev-shm-usage",
+        "--disable-infobars",
+        "--window-size=1366,900",
+    ]
+    try:
+        return p.chromium.launch(headless=True, channel="chrome", args=args)
+    except Exception as e:
+        print(f"  [info] Chrome real no disponible ({e}); usando Chromium", file=sys.stderr)
+        return p.chromium.launch(headless=True, args=args)
 
 
 def main():
@@ -178,17 +285,12 @@ def main():
 
     all_rows = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--disable-dev-shm-usage",
-            ],
-        )
+        browser = crear_browser(p)
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
             locale="es-UY",
+            timezone_id="America/Montevideo",
             viewport={"width": 1366, "height": 900},
             extra_http_headers={
                 "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
@@ -197,6 +299,16 @@ def main():
         context.add_init_script(STEALTH_JS)
         context.route("**/*", bloquear_recursos_innecesarios)
         page = context.new_page()
+
+        # "entrada en calor": visitar la home primero, como haria una
+        # persona, en vez de ir directo a la URL profunda del listado.
+        try:
+            print(f"  visitando {HOME_URL} (entrada en calor)", file=sys.stderr)
+            page.goto(HOME_URL, timeout=60000, wait_until="domcontentloaded")
+            humanizar(page)
+            espera(1.5, 3)
+        except Exception as e:
+            print(f"  [warn] no se pudo visitar la home: {e}", file=sys.stderr)
 
         for operacion, base in BASE.items():
             for n in range(1, args.paginas + 1):
@@ -223,7 +335,7 @@ def main():
                         "banos": banos,
                         "m2": m2,
                     })
-                time.sleep(2)
+                espera(2.5, 5.5)
         browser.close()
 
     dedup = {}

@@ -290,6 +290,41 @@
 </div>
 
 <script>
+// --- Registro de uso: ingresos y búsquedas (ver GUIA_PUBLICACION.md) ---
+// Pegá acá la URL de tu Google Apps Script publicado como "Aplicación web" (termina en /exec).
+// Si queda vacío, simplemente no se registra nada (no rompe el sitio).
+const TRACK_URL = '';
+
+function trackEvent(evento, detalle){
+  if(!TRACK_URL || TRACK_URL.indexOf('http') !== 0) return;
+  try{
+    fetch(TRACK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        usuario: localStorage.getItem('vf_user') || '',
+        evento: evento,
+        detalle: detalle || null,
+        ts: new Date().toISOString()
+      })
+    });
+  }catch(e){ console.error('No se pudo registrar el evento de uso:', e); }
+}
+
+let trackFiltrosTimer = null;
+function trackFiltrosDebounced(){
+  clearTimeout(trackFiltrosTimer);
+  trackFiltrosTimer = setTimeout(() => {
+    trackEvent('busqueda', {
+      operacion: state.operacion, portal: state.portal, estado: state.estado,
+      tipo: state.tipo, barrio: state.barrio, moneda: state.moneda,
+      dorm: state.dorm, pmin: state.pmin, pmax: state.pmax, q: state.q
+    });
+  }, 2000);
+}
+// --- fin registro de uso ---
+
 // --- Login (protección simple del lado del cliente, ver GUIA_PUBLICACION.md) ---
 async function sha256Hex(str){
   const enc = new TextEncoder().encode(str);
@@ -297,9 +332,10 @@ async function sha256Hex(str){
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function mostrarApp(){
+function mostrarApp(origen){
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('appContent').style.display = 'block';
+  trackEvent('ingreso', { tipo: origen || 'desconocido' });
   init().catch(e => {
     console.error(e);
     document.getElementById('tableWrap').innerHTML =
@@ -318,7 +354,7 @@ async function intentarLogin(usuario, pass){
     if(ok){
       localStorage.setItem('vf_auth', 'ok');
       localStorage.setItem('vf_user', usuario.trim());
-      mostrarApp();
+      mostrarApp('login_manual');
     } else {
       errorEl.textContent = 'Usuario o contraseña incorrectos.';
     }
@@ -336,7 +372,7 @@ document.getElementById('loginForm').addEventListener('submit', e => {
 });
 
 if(localStorage.getItem('vf_auth') === 'ok'){
-  mostrarApp();
+  mostrarApp('sesion_guardada');
 }
 
 document.addEventListener('click', e => {
@@ -380,6 +416,7 @@ function setupMultiSelect(containerId, stateKey, values){
       updateMselLabel(btn, state[stateKey]);
       page = 1;
       render();
+      trackFiltrosDebounced();
     });
     panel.appendChild(label);
   });
@@ -512,6 +549,7 @@ function setupChips(containerId, stateKey, targetState, onChange){
       chip.classList.add('active');
       targetState[stateKey] = chip.dataset.val;
       onChange();
+      if(targetState === state) trackFiltrosDebounced();
     });
   });
 }
@@ -725,10 +763,10 @@ async function init(){
   setupMultiSelect('fTipo', 'tipo', tipos);
   setupMultiSelect('fBarrio', 'barrio', barrios);
 
-  document.getElementById('fDorm').addEventListener('change', e => { state.dorm = e.target.value; page=1; render(); });
-  document.getElementById('fPrecioMin').addEventListener('input', e => { state.pmin = e.target.value; page=1; render(); });
-  document.getElementById('fPrecioMax').addEventListener('input', e => { state.pmax = e.target.value; page=1; render(); });
-  document.getElementById('fBuscar').addEventListener('input', e => { state.q = e.target.value; page=1; render(); });
+  document.getElementById('fDorm').addEventListener('change', e => { state.dorm = e.target.value; page=1; render(); trackFiltrosDebounced(); });
+  document.getElementById('fPrecioMin').addEventListener('input', e => { state.pmin = e.target.value; page=1; render(); trackFiltrosDebounced(); });
+  document.getElementById('fPrecioMax').addEventListener('input', e => { state.pmax = e.target.value; page=1; render(); trackFiltrosDebounced(); });
+  document.getElementById('fBuscar').addEventListener('input', e => { state.q = e.target.value; page=1; render(); trackFiltrosDebounced(); });
 
   setupChips('fOperacion', 'operacion', state, () => { page=1; render(); });
   setupChips('fPortal', 'portal', state, () => { page=1; render(); });
