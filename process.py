@@ -23,6 +23,7 @@ import argparse
 import json
 import os
 import sys
+from collections import defaultdict
 from datetime import date
 
 import pandas as pd
@@ -31,6 +32,13 @@ from barrios import normalizar_barrios
 
 COLS = ["portal", "operacion", "url", "titulo", "tipo_inmueble", "barrio",
         "precio_moneda", "precio_valor", "gastos_comunes", "dormitorios", "banos", "m2"]
+
+# Si un portal que tenia al menos esta cantidad de avisos activos trae 0
+# avisos en una corrida, se asume que el scraper fue bloqueado (ej. muro
+# anti-bot de MercadoLibre) en vez de que el portal se haya vaciado de
+# verdad, y se mantienen sus avisos anteriores sin cambios en vez de
+# marcarlos como "baja".
+UMBRAL_MIN_AVISOS_PORTAL = 5
 
 
 def load_existing(path):
@@ -82,6 +90,36 @@ def main():
     existing = load_existing(args.data)
     fecha = args.fecha
     bajas_historico = list(existing.get("bajas_historico", [])) if existing else []
+
+    if existing is not None:
+        old_por_portal = defaultdict(int)
+        for r in existing.get("listado", []):
+            old_por_portal[r.get("portal", "")] += 1
+        nuevos_por_portal = df_new["portal"].value_counts().to_dict()
+
+        filas_a_mantener = []
+        for portal, cnt_old in old_por_portal.items():
+            cnt_new = nuevos_por_portal.get(portal, 0)
+            if cnt_old >= UMBRAL_MIN_AVISOS_PORTAL and cnt_new == 0:
+                print(
+                    f"[warn] {portal} trajo 0 avisos en esta corrida (tenia {cnt_old} "
+                    f"activos). Se asume que el scraper fue bloqueado (ej. muro anti-bot) "
+                    f"y se mantienen sus avisos anteriores sin cambios, en vez de marcarlos "
+                    f"como baja.",
+                    file=sys.stderr,
+                )
+                filas_a_mantener.extend(
+                    r for r in existing.get("listado", []) if r.get("portal", "") == portal
+                )
+
+        if filas_a_mantener:
+            df_mantener = pd.DataFrame(filas_a_mantener)
+            for c in COLS:
+                if c not in df_mantener.columns:
+                    df_mantener[c] = ""
+            df_mantener = df_mantener[COLS].fillna("")
+            df_new = pd.concat([df_new, df_mantener], ignore_index=True)
+            df_new = df_new.drop_duplicates(subset=["url"])
 
     if existing is None:
         listado = df_new.to_dict("records")
@@ -169,7 +207,6 @@ def main():
             })
 
     # contar por portal+operacion para el historico de esta corrida
-    from collections import defaultdict
     counts = defaultdict(lambda: {"nuevos": 0, "mantenidos": 0, "bajas": 0})
     for row in listado:
         key = (row["portal"], row["operacion"])
