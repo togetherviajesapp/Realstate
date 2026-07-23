@@ -1,4 +1,5 @@
 ﻿portal,operacion,url,titulo,tipo_inmueble,barrio,precio_moneda,precio_valor,gastos_comunes,dormitorios,banos,m2
+Veocasas,venta,https://veocasas.com/properties/cmrv44ht602cc5os3eov21bxb,Venta Oficina en Tres Cruces,Oficina,Tres Cruces,USD,95000,6970,,,
 Veocasas,venta,https://veocasas.com/properties/cmrp7md3g01tz42mhn98slrwd,Acercate a conocer este apartamento de  2 dormitorios con terraza de 13 m2 y sol,Apartamento,,USD,229000,6400,2,1,
 Veocasas,venta,https://veocasas.com/properties/cmqshcju404681lbtwp7bn8ci,Venta apartamento 3 dormitorios con balcón y patio (alquilado). Tres Cruces,Apartamento,Tres Cruces,USD,146500,4500,3,1,103.1
 Veocasas,venta,https://veocasas.com/properties/cmri1s0uc0eyssffwvsugx371,Independiente con patio y opción de garage,Garage,,USD,128000,800,2,2,65.0
@@ -16,7 +17,6 @@ Veocasas,venta,https://veocasas.com/properties/cmrds1s1k00039tqwlu2ckf5j,Monoamb
 Veocasas,venta,https://veocasas.com/properties/cmqgxa1qv03rxxez82d6b8chf,"CASA PADRÓN ÚNICO EN PRADO NORTE | AMPLITUD, PORTE Y GRAN TERRENO",Casa,Prado,USD,245000,,3,2,563.0
 Veocasas,venta,https://veocasas.com/properties/cmg83yp1801xw1igyjnmv2zvd,APARTAMENTO EN PUERTO DEL BUCEO,Apartamento,Buceo,USD,680000,40000,3,3,
 Veocasas,venta,https://veocasas.com/properties/cmltxjyng0015oyx54vrx3a4m,Apartamento amoblado en alquiler,Apartamento,,USD,215000,6000,1,1,
-Veocasas,venta,https://veocasas.com/properties/cmpljkdr53yjojwui05mbq4i8,Apartamento en venta de 3 dormitorios y 3 baños en LIV District Carrasco,Apartamento,Carrasco,USD,479000,15000,3,2,
 Veocasas,venta,https://veocasas.com/properties/cmp3pmunn223fyw2ks8cqsskv,Espectacular casa en el Pocitos Nuevo,Casa,Pocitos Nuevo,USD,890000,,4,3,534.0
 Veocasas,venta,https://veocasas.com/properties/cmq9iwomi01m0t7tdkds8ih1u,"Venta de Apartamento en Villa Biarritz 10291, Punta Carretas, de 2 dormitorios, en piso alto con vista al mar",Apartamento,Punta Carretas,USD,520000,12000,2,2,1.0
 Veocasas,venta,https://veocasas.com/properties/cmp5fcybs3xexdomwylaurqwh,"Casa en venta en Carrasco 10258, amplia, con gran terreno, piscina, barbacoa y casa independiente al fondo",Casa,Carrasco,USD,980000,,6,5,885.0
