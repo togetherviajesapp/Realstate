@@ -31,6 +31,14 @@ Nota: si al arrastrar la carpeta `.github` no te deja (algunos navegadores no so
 
 Esa es la URL que vas a poder abrir desde cualquier dispositivo.
 
+## URL definitiva: Vercel (20/7/2026)
+
+El link de GitHub Pages incluía "togetherviajesapp" (el nombre de otro proyecto tuyo), así que se agregó una segunda publicación en Vercel, apuntando al mismo repositorio, con un nombre propio:
+
+**`https://inmueblesuy.vercel.app/`** — este es el link que hay que compartir y usar de acá en más.
+
+Es un proyecto de Vercel completamente aparte del de Together (mismo repo de GitHub, pero un proyecto distinto en Vercel) — no toca ni la cuenta de GitHub ni nada de ese otro proyecto. Se actualiza solo cada vez que la tarea semanal (o cualquier otro cambio) se sube al repositorio, igual que GitHub Pages, que se puede seguir usando o dejar de compartir, como prefieras — ambos quedan funcionando en paralelo con los mismos datos.
+
 ## Paso 3 — Instalar el runner en tu computadora (necesario para Gallito y MercadoLibre)
 
 Gallito y MercadoLibre bloquean el tráfico que sale de las máquinas de GitHub (ver "Limitaciones conocidas" más abajo). Para evitar ese bloqueo, la tarea semanal ahora corre **desde tu propia computadora** en vez de en la nube de GitHub — usa tu conexión a internet normal, la misma con la que navegás vos. Es gratis, pero tu PC tiene que estar prendida y conectada a internet los lunes, miércoles y viernes a las 10am (hora Uruguay), o vas a tener que correrla vos a mano ese día cuando puedas.
@@ -197,6 +205,48 @@ El sitio ahora pide usuario y contraseña antes de mostrar nada. Usuarios inicia
 5. Guardá los cambios ("Commit changes"). Ya puede entrar con la nueva clave.
 
 No hay una forma de que cada persona cambie su propia contraseña desde el sitio (necesitaría un servidor, que es justo lo que estamos evitando por el costo) — los cambios de contraseña se hacen siempre así, editando `usuarios.json`.
+
+## Registro de uso: ingresos y búsquedas (21/7/2026)
+
+El sitio puede registrar, en una Google Sheet propia tuya, cada vez que alguien entra y qué filtros/búsquedas usa (operación, portal, barrio, precio, texto buscado, etc.), con usuario y fecha/hora. Por defecto está **apagado** (no manda nada) hasta que lo actives con los pasos de abajo. Es gratis, sin tarjeta.
+
+Cómo funciona: en `index.html` hay una constante `TRACK_URL` vacía. Mientras esté vacía, el sitio funciona igual que antes y no registra nada. Al completarla con la URL de tu Google Apps Script, cada login y cada cambio de filtro (con una pequeña demora de 2 segundos para no mandar un evento por cada letra tipeada) se manda a esa URL.
+
+**Pasos para activarlo:**
+1. Andá a [sheets.google.com](https://sheets.google.com) y creá una planilla nueva, por ejemplo "Registro de uso — Inmuebles Montevideo".
+2. En el menú de la planilla: **Extensiones > Apps Script**.
+3. Borrá el código de ejemplo que aparece y pegá el contenido del archivo `Code.gs` (está en la raíz del repo, junto a `index.html`).
+4. Guardá (ícono de disco o Ctrl+S). Si pide un nombre para el proyecto, poné cualquiera.
+5. Arriba a la derecha: **Implementar > Nueva implementación**.
+   - Tipo: **Aplicación web**.
+   - Ejecutar como: **Yo** (tu cuenta de Google).
+   - Quién tiene acceso: **Cualquier usuario** (necesario para que el sitio pueda mandar los datos sin loguearse con Google).
+6. Tocá **Implementar**. La primera vez te va a pedir autorizar permisos — es tu propio script accediendo a tu propia planilla, aceptá.
+7. Copiá la URL que termina en `/exec`.
+8. Abrí `index.html`, buscá la línea `const TRACK_URL = '';` y pegá la URL entre las comillas.
+9. Subí el `index.html` actualizado a GitHub (como siempre, reemplazando el archivo).
+
+Una vez activo, cada fila en la hoja "Registros" de tu planilla tiene: fecha/hora, usuario, tipo de evento (`ingreso` o `busqueda`) y el detalle (qué filtros tenía puestos, o si el ingreso fue con usuario/contraseña o porque ya tenía la sesión guardada en ese dispositivo).
+
+**Limitaciones de este enfoque:**
+- Si más adelante cambiás la URL del Apps Script (por ejemplo, creás una implementación nueva), hay que actualizar `TRACK_URL` en `index.html` con la URL nueva.
+- Como el sitio manda estos datos con `fetch(..., {mode:'no-cors'})`, no hay forma de confirmar desde el navegador si Google efectivamente guardó la fila (por diseño no se puede leer la respuesta) — si algo falla, revisá directamente la planilla.
+- Esto registra uso del sitio, no información personal más allá del usuario que ya usan para entrar.
+
+## MercadoLibre: el muro anti-bot volvió (22-23/7/2026)
+
+Después de arreglarlo el 20/7, el muro de "verificación de cuenta" volvió a aparecer en dos corridas seguidas (22/7 y 23/7), trayendo 0 avisos ambas veces. Como esto pasó *antes* de que existiera la salvaguarda de `process.py` (ver más abajo), esos 0 avisos alcanzaron a borrar los 288 avisos de MercadoLibre que estaban activos — tuve que reconstruir `data.json` a mano restaurando esos avisos desde la última corrida buena y limpiando las "bajas falsas" que había dejado el bloqueo.
+
+Dos arreglos separados, en capas distintas:
+
+**1. Salvaguarda en `process.py` (ya activa desde el 22/7):** si un portal que tenía avisos activos trae 0 en una corrida, `process.py` ahora asume que el scraper fue bloqueado y mantiene los avisos anteriores de ese portal sin cambios, en vez de marcarlos como baja. Esto evita que un bloqueo futuro vuelva a borrar datos, pero **no evita el bloqueo en sí** — es una red de seguridad, no una solución.
+
+**2. Mejoras al scraper de MercadoLibre (`scraper_ml.py`) para reducir el bloqueo:**
+- **Sesión persistente entre corridas:** antes, cada corrida arrancaba con cookies nuevas (una sesión "recién nacida" cada vez, algo que un sistema anti-bot serio nota). Ahora el scraper guarda las cookies al terminar en `~/.ml_scraper_state.json` (en la carpeta del usuario de Windows, fuera de la carpeta del repo, para que sobreviva al "clean" que hace GitHub Actions en cada corrida) y las reusa en la próxima corrida. Con el tiempo, la sesión va a "envejecer" y parecer más creíble.
+- **User-Agent coherente:** antes se forzaba siempre un User-Agent fijo ("Chrome/124"), incluso cuando el scraper usaba el Chrome real instalado en tu PC (que puede ser una versión más nueva). Esa inconsistencia entre "qué dice ser" y "qué es realmente" es día una señal clásica de bot. Ahora, si se usa el Chrome real, se deja su User-Agent auténtico sin tocar.
+- **Navegación más humana:** en vez de ir de la home directo a la URL del listado, ahora simula escribir "inmuebles montevideo" en el buscador de la home y confirmar con Enter, con tipeo y pausas variables. Las esperas entre páginas también se alargaron (antes 2.5-5.5s, ahora 3-7s).
+
+**Importante — esto no garantiza que el muro no vuelva a aparecer.** MercadoLibre puede seguir ajustando su detección en cualquier momento; estas medidas apuntan a hacer la sesión automatizada más parecida a una real, pero no hay forma de asegurar que nunca más bloquee. Si vuelve a pasar, ahora al menos la salvaguarda de `process.py` evita que se pierdan datos, y conviene revisar el log de la corrida (paso "Descargar MercadoLibre" en Actions) para confirmar si es el mismo muro u otra cosa.
 
 ## Limitaciones conocidas
 

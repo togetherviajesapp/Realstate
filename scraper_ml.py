@@ -263,7 +263,14 @@ def cargar_pagina_ml(page, url, intentos=2):
 
 def crear_browser(p):
     """Intenta lanzar Chrome real (fingerprint mas creible que el Chromium
-    que trae Playwright); si no esta instalado en la maquina, usa Chromium."""
+    que trae Playwright); si no esta instalado en la maquina, usa Chromium.
+
+    Devuelve (browser, es_chrome_real). Es importante saber cual de los dos
+    se uso: si es Chrome real, su propio User-Agent y Client Hints (Sec-CH-UA)
+    ya son autenticos y coherentes entre si -- forzar un user_agent distinto
+    en el contexto rompe esa coherencia (el navegador dice "soy Chrome 124"
+    pero sus Client Hints dicen la version real instalada) y es exactamente
+    el tipo de inconsistencia que un sistema anti-bot serio detecta."""
     args = [
         "--disable-blink-features=AutomationControlled",
         "--disable-dev-shm-usage",
@@ -271,24 +278,59 @@ def crear_browser(p):
         "--window-size=1366,900",
     ]
     try:
-        return p.chromium.launch(headless=True, channel="chrome", args=args)
+        return p.chromium.launch(headless=True, channel="chrome", args=args), True
     except Exception as e:
         print(f"  [info] Chrome real no disponible ({e}); usando Chromium", file=sys.stderr)
-        return p.chromium.launch(headless=True, args=args)
+        return p.chromium.launch(headless=True, args=args), False
+
+
+def buscar_desde_home(page):
+    """En vez de saltar directo del home a la URL profunda del listado, usa
+    el buscador de la home como haria una persona real: tipear en la caja de
+    busqueda y confirmar. Genera trafico/interaccion mas realista antes de
+    llegar al listado, y evita repetir siempre la misma secuencia (home ->
+    URL directa) que un sistema anti-bot puede aprender a reconocer."""
+    try:
+        caja = page.locator("input.nav-search-input").first
+        caja.click(timeout=5000)
+        espera(0.3, 0.7)
+        for ch in "inmuebles montevideo":
+            page.keyboard.type(ch, delay=random.uniform(40, 120))
+        espera(0.4, 0.9)
+        page.keyboard.press("Enter")
+        page.wait_for_load_state("domcontentloaded", timeout=15000)
+        humanizar(page)
+        espera(1, 2)
+        return True
+    except Exception as e:
+        print(f"  [info] no se pudo buscar desde la home ({e}); se sigue igual", file=sys.stderr)
+        return False
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--paginas", type=int, default=3)
+    ap.add_argument(
+        "--storage-state",
+        default=os.path.expanduser("~/.ml_scraper_state.json"),
+        help="Archivo donde se guardan las cookies/sesion entre corridas. "
+             "Por defecto vive en la carpeta del usuario (fuera del repo), "
+             "para que sobreviva al clean del checkout de cada corrida. "
+             "Una sesion que se ve 'vieja' (con cookies e historial) es "
+             "mucho menos sospechosa para el anti-bot que una sesion nueva "
+             "en cada corrida.",
+    )
     args = ap.parse_args()
+
+    storage_state_path = args.storage_state
+    tiene_sesion_previa = os.path.exists(storage_state_path)
 
     all_rows = []
     with sync_playwright() as p:
-        browser = crear_browser(p)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        browser, es_chrome_real = crear_browser(p)
+
+        context_kwargs = dict(
             locale="es-UY",
             timezone_id="America/Montevideo",
             viewport={"width": 1366, "height": 900},
@@ -296,6 +338,21 @@ def main():
                 "Accept-Language": "es-UY,es;q=0.9,en;q=0.8",
             },
         )
+        if not es_chrome_real:
+            # Solo se fuerza un User-Agent manual cuando se usa el Chromium
+            # que trae Playwright (no hay Chrome real disponible). Con Chrome
+            # real se deja su propio UA/Client Hints, que ya son autenticos.
+            context_kwargs["user_agent"] = (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            )
+        if tiene_sesion_previa:
+            print(f"  usando sesion guardada de una corrida anterior ({storage_state_path})", file=sys.stderr)
+            context_kwargs["storage_state"] = storage_state_path
+        else:
+            print("  no hay sesion guardada todavia; arranca desde cero", file=sys.stderr)
+
+        context = browser.new_context(**context_kwargs)
         context.add_init_script(STEALTH_JS)
         context.route("**/*", bloquear_recursos_innecesarios)
         page = context.new_page()
@@ -306,7 +363,8 @@ def main():
             print(f"  visitando {HOME_URL} (entrada en calor)", file=sys.stderr)
             page.goto(HOME_URL, timeout=60000, wait_until="domcontentloaded")
             humanizar(page)
-            espera(1.5, 3)
+            espera(2, 4)
+            buscar_desde_home(page)
         except Exception as e:
             print(f"  [warn] no se pudo visitar la home: {e}", file=sys.stderr)
 
@@ -335,7 +393,17 @@ def main():
                         "banos": banos,
                         "m2": m2,
                     })
-                espera(2.5, 5.5)
+                espera(3, 7)
+
+        # Guarda cookies/sesion para la proxima corrida, tenga exito o no
+        # esta (una sesion que persiste y acumula antiguedad es la señal
+        # mas fuerte de que "no es la primera vez que este navegador entra").
+        try:
+            context.storage_state(path=storage_state_path)
+            print(f"  sesion guardada en {storage_state_path} para la proxima corrida", file=sys.stderr)
+        except Exception as e:
+            print(f"  [warn] no se pudo guardar la sesion: {e}", file=sys.stderr)
+
         browser.close()
 
     dedup = {}
