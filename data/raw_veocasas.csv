@@ -1,10 +1,11 @@
 ﻿portal,operacion,url,titulo,tipo_inmueble,barrio,precio_moneda,precio_valor,gastos_comunes,dormitorios,banos,m2
+Veocasas,venta,https://veocasas.com/properties/cmrv44ht602cc5os3eov21bxb,Venta Oficina en Tres Cruces,Oficina,Tres Cruces,USD,95000,6970,,,
+Veocasas,venta,https://veocasas.com/properties/cmoiilm2b00f36dewpj0yj2in,"Apartamento en venta de 2 dormitorios en Torres Nuevo Centro – Piso 17, vista despejada",Apartamento,Centro,USD,179900,9500,2,1,
 Veocasas,venta,https://veocasas.com/properties/cmqshcju404681lbtwp7bn8ci,Venta apartamento 3 dormitorios con balcón y patio (alquilado). Tres Cruces,Apartamento,Tres Cruces,USD,146500,4500,3,1,103.1
 Veocasas,venta,https://veocasas.com/properties/cmltxjyng0015oyx54vrx3a4m,Apartamento amoblado en alquiler,Apartamento,,USD,215000,6000,1,1,
 Veocasas,venta,https://veocasas.com/properties/cmpljkdr53yjojwui05mbq4i8,Apartamento en venta de 3 dormitorios y 3 baños en LIV District Carrasco,Apartamento,Carrasco,USD,479000,15000,3,2,
 Veocasas,venta,https://veocasas.com/properties/cmrv4cuvn02a672d85j2yyfc7,Casa Venta 3 Dormitorios Fondo Parrillero Garaje Buceo,Casa,Buceo,USD,340000,,3,3,443.0
 Veocasas,venta,https://veocasas.com/properties/cmig20p7o0apvjqifkbi2k355,Apartamento en Venta Penthouse 4 Dormitorios Calefacción Garaje Estufa a Leña Punta Carretas,Apartamento,Punta Carretas,USD,469000,24000,4,3,184.0
-Veocasas,venta,https://veocasas.com/properties/cmrv44ht602cc5os3eov21bxb,Venta Oficina en Tres Cruces,Oficina,Tres Cruces,USD,95000,6970,,,
 Veocasas,venta,https://veocasas.com/properties/cmrp7md3g01tz42mhn98slrwd,Acercate a conocer este apartamento de  2 dormitorios con terraza de 13 m2 y sol,Apartamento,,USD,229000,6400,2,1,
 Veocasas,venta,https://veocasas.com/properties/cmri1s0uc0eyssffwvsugx371,Independiente con patio y opción de garage,Garage,,USD,128000,800,2,2,65.0
 Veocasas,venta,https://veocasas.com/properties/cmo3412zc071n9xbn40kqsci7,"Apartamento en Rambla Pocitos con vista al mar, 3 dormitorios + servicio y garage",Apartamento,Pocitos,USD,515000,32500,3,3,
@@ -87,17 +88,16 @@ Veocasas,venta,https://veocasas.com/properties/cmmojspy800ro6g1p1psk23nt,VENTA C
 Veocasas,venta,https://veocasas.com/properties/cmlv10cnm0038f5nnl8tmumzk,Venta apartamento monoambiente en Cordón,Apartamento,Cordón,USD,113000,6000,1,1,47.0
 Veocasas,venta,https://veocasas.com/properties/cmh0os10t05n24dxka1jc866r,Casa 3 dormitorios al lago - Proyecto Marinas Carrasco - Ref 1173,Casa,Carrasco,USD,700000,12000,3,3,296.2
 Veocasas,venta,https://veocasas.com/properties/cmln6t40g002l2z4j8p90oh37,Espléndido Penthouse Duplex con Piscina en Carrasco,,Carrasco,USD,1560000,40000,3,4,240.0
-Veocasas,venta,https://veocasas.com/properties/cmljr855t007ibdu8qggnakst,Venta Casa 3 dormitorios + servicio - ZEN RESERVA - Ref 2079,Casa,,USD,665600,,3,4,
 Veocasas,venta,https://veocasas.com/properties/cminhbvnt0004bw246bgr7wrg,Venta Terreno Corazón De Pocitos,Terreno,Pocitos,USD,780000,,,,206.0
 Veocasas,venta,https://veocasas.com/properties/cmgfmkqts01ad9d8vbqhxc1n3,Espectacular Casa a la Venta con Renta en San Nicolás,Casa,,USD,1750000,28500,3,3,1050.0
 Veocasas,venta,https://veocasas.com/properties/cmgfaw71m03nihvauo9vxy9em,Elegante casa a la venta en centro de Carrasco,Casa,Carrasco,USD,1390000,,4,5,1220.0
+Veocasas,venta,https://veocasas.com/properties/cmqvajs3v082uwqci4pkqwf8c,venta 1 dormitorio y  patio exclusico,,,USD,202659,5000,1,1,
 Veocasas,venta,https://veocasas.com/properties/cms37t1oe02cnpfvon843bpp3,"Apartamento tipo Casa en Venta en Belvedere, Montevideo",Apartamento,Belvedere,USD,120000,3000,3,1,
 Veocasas,venta,https://veocasas.com/properties/cmgkw83p90zfbsi7s1653diya,"Apartamentos en venta 1 dormitorio sobre Franzini, Pocitos.",Apartamento,Pocitos,USD,213350,,1,1,59.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw84xr0zkbsi7s02tozax7,Apartamento de 1 dormitorio en piso alto en venta,Apartamento,,USD,155800,,1,1,42.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw86iq0zq7si7szbd1ky4o,Apartamento en venta de 2 dormitorios en parque batlle,Apartamento,Parque Batlle,USD,229500,,2,1,79.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw888d0zvvsi7sjkivpbg9,Apartamento en venta de 1 dormitorio en Malvin,Apartamento,Malvín,USD,152000,,1,1,55.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw88980zvzsi7sw1huwjdy,Venta de apartamento de 1 dormitorio en Malvin,Apartamento,Malvín,USD,153000,,1,1,56.0
-Veocasas,venta,https://veocasas.com/properties/cmgkw88am0zw3si7s57fjthfk,En venta apartamento de 2 dormitorios en Malvin,Apartamento,Malvín,USD,225000,,2,2,84.0
 Veocasas,alquiler,https://veocasas.com/properties/cmr60jdfv03qlyqynwqljcd4y,Apartamento a estrenar de 2 dormitorios amoblado en Parque Rodó,Apartamento,Parque Rodó,USD,1990,6900,2,2,101.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpwafy8p01z3dzh435gk3ife,Apartamento de 1 dormitorio en alquiler la blanqueada,Apartamento,La Blanqueada,UYU,28500,4500,1,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpz5bkgp010p2498dmnja3t9,Apartamento de 1 dormitorio amoblado en Pocitos,Apartamento,Pocitos,USD,1050,8800,2,2,65.0
