@@ -1,6 +1,10 @@
 ﻿portal,operacion,url,titulo,tipo_inmueble,barrio,precio_moneda,precio_valor,gastos_comunes,dormitorios,banos,m2
+Veocasas,venta,https://veocasas.com/properties/cmlbyv6fw00dq62clktvbm5n3,Apartamento a estrenar de 1 dormitorio en Parque Batlle,Apartamento,Parque Batlle,USD,146500,4000,1,1,54.0
+Veocasas,venta,https://veocasas.com/properties/cmp3pmunn223fyw2ks8cqsskv,Espectacular casa en el Pocitos Nuevo,Casa,Pocitos Nuevo,USD,890000,,4,3,534.0
+Veocasas,venta,https://veocasas.com/properties/cms39y7xu0319car0mme475m2,"Apartamento Duplex con Balcón en Venta en Unión, Montevideo",Apartamento,Unión,USD,80000,7500,2,1,
 Veocasas,venta,https://veocasas.com/properties/cmrv44ht602cc5os3eov21bxb,Venta Oficina en Tres Cruces,Oficina,Tres Cruces,USD,95000,6970,,,
 Veocasas,venta,https://veocasas.com/properties/cmoiilm2b00f36dewpj0yj2in,"Apartamento en venta de 2 dormitorios en Torres Nuevo Centro – Piso 17, vista despejada",Apartamento,Centro,USD,179900,9500,2,1,
+Veocasas,venta,https://veocasas.com/properties/cmoipqnal00pwr5143bsfrpjj,Venta y Alquiler casa Ph 3 dormitorios + barbacoa en Jardines de Carrasco - Ref 709,Casa,Carrasco,USD,850000,,3,3,352.0
 Veocasas,venta,https://veocasas.com/properties/cmqshcju404681lbtwp7bn8ci,Venta apartamento 3 dormitorios con balcón y patio (alquilado). Tres Cruces,Apartamento,Tres Cruces,USD,146500,4500,3,1,103.1
 Veocasas,venta,https://veocasas.com/properties/cmltxjyng0015oyx54vrx3a4m,Apartamento amoblado en alquiler,Apartamento,,USD,215000,6000,1,1,
 Veocasas,venta,https://veocasas.com/properties/cmpljkdr53yjojwui05mbq4i8,Apartamento en venta de 3 dormitorios y 3 baños en LIV District Carrasco,Apartamento,Carrasco,USD,479000,15000,3,2,
@@ -21,7 +25,6 @@ Veocasas,venta,https://veocasas.com/properties/cmiewawme00dwe7x8kr2wkho4,Estupen
 Veocasas,venta,https://veocasas.com/properties/cmrds1s1k00039tqwlu2ckf5j,Monoambiente  con terraza 4 m2 Amenities con piscina,Apartamento,,USD,116000,,0,1,
 Veocasas,venta,https://veocasas.com/properties/cmqgxa1qv03rxxez82d6b8chf,"CASA PADRÓN ÚNICO EN PRADO NORTE | AMPLITUD, PORTE Y GRAN TERRENO",Casa,Prado,USD,245000,,3,2,563.0
 Veocasas,venta,https://veocasas.com/properties/cmg83yp1801xw1igyjnmv2zvd,APARTAMENTO EN PUERTO DEL BUCEO,Apartamento,Buceo,USD,680000,40000,3,3,
-Veocasas,venta,https://veocasas.com/properties/cmp3pmunn223fyw2ks8cqsskv,Espectacular casa en el Pocitos Nuevo,Casa,Pocitos Nuevo,USD,890000,,4,3,534.0
 Veocasas,venta,https://veocasas.com/properties/cmqshcf3o04501lbtejqn5tzm,"Venta apartamento 1 dormitorio alquilado. Malvín sobre Av. Italia. - Rentabilidad anual 6,65%",Apartamento,Malvín,USD,83500,2600,1,1,48.5
 Veocasas,venta,https://veocasas.com/properties/cmq9iwomi01m0t7tdkds8ih1u,"Venta de Apartamento en Villa Biarritz 10291, Punta Carretas, de 2 dormitorios, en piso alto con vista al mar",Apartamento,Punta Carretas,USD,520000,12000,2,2,1.0
 Veocasas,venta,https://veocasas.com/properties/cmp5fcybs3xexdomwylaurqwh,"Casa en venta en Carrasco 10258, amplia, con gran terreno, piscina, barbacoa y casa independiente al fondo",Casa,Carrasco,USD,980000,,6,5,885.0
@@ -31,16 +34,9 @@ Veocasas,venta,https://veocasas.com/properties/cmq6aixk941dlgi7gajf6cpgy,Apartam
 Veocasas,venta,https://veocasas.com/properties/cmr27icrk08nv18umek4rt58s,"Venta De Apartamento Al Frente. 2 Dormitorios, Amplios Ventanales y Terrazas. Moderno Edificio. Puerto Del Buceo!",Apartamento,Buceo,USD,215000,,2,1,
 Veocasas,venta,https://veocasas.com/properties/cmr27icbi08np18umjd8wjjum,"Venta De Apartamento Al Frente. 1 Dormitorio, Amplios Ventanales. Moderno Edificio. Puerto Del Buceo!",Apartamento,Buceo,USD,199000,,1,1,
 Veocasas,venta,https://veocasas.com/properties/cmr27ic3b08nm18umlclkt2ai,"Venta en JOY Montevideo, 2 dormitorios, 2 baños, amenities, seguridad",,,USD,325000,19000,2,2,
-Veocasas,venta,https://veocasas.com/properties/cmqj5hjoa00s8syo4n9fxzzka,Exclusivo Pent-house frente al Parque Villa Biarritz con Parrillero,,,USD,650000,32000,3,3,157.0
-Veocasas,venta,https://veocasas.com/properties/cmqshcv2h04961lbtoe5azbex,"Venta apartamento de 2 dormitorios, planta baja con patio en complejo cerrado- Carrasco Norte",Apartamento,Carrasco Norte,USD,130500,2000,2,1,71.2
 Veocasas,venta,https://veocasas.com/properties/cmlhon3pg00iwj32h2yivdoce,Casa de 4 dormitorios en venta en Prado,Casa,Prado,USD,290000,,4,2,247.0
-Veocasas,venta,https://veocasas.com/properties/cmqshck9k046c1lbt3wem22j1,"Venta apartamento de 1 dormitorio, Carrasco Norte - Rentabilidad anual estimada 6,39%",Apartamento,Carrasco Norte,USD,108000,2000,1,1,31.6
-Veocasas,venta,https://veocasas.com/properties/cmqshcl49046k1lbtyc7f28ed,"Venta apartamento de 1 dormitorio, planta baja- Carrasco Norte",Apartamento,Carrasco Norte,USD,110250,2000,1,1,31.5
 Veocasas,venta,https://veocasas.com/properties/cmr27icjq08ns18ummb8hlnbx,"Venta De Apartamento Al Frente. 1 Dormitorio, Amplios Ventanales. Moderno Edificio. Puerto Del Buceo!",Apartamento,Buceo,USD,171000,,1,1,
-Veocasas,venta,https://veocasas.com/properties/cmr27ibnp08ng18umk8vctc9x,"Venta Apartamento en Edificio JOY Montevideo, 3 Dormitorios, 3 Baños, Terraza Y Garage",Apartamento,,USD,551000,29000,3,3,
 Veocasas,venta,https://veocasas.com/properties/cmqpk9dtu029dyu536pe5iwx3,Venta de Apartamento en Tres Cruces con terraza compartida,Apartamento,Tres Cruces,USD,80000,1200,1,1,
-Veocasas,venta,https://veocasas.com/properties/cmqshcts0048u1lbt90cklfsb,"Venta apartamento de 1 dormitorio, planta baja- Carrasco Norte",Apartamento,Carrasco Norte,USD,110250,2000,1,1,31.7
-Veocasas,venta,https://veocasas.com/properties/cmqshcgls045e1lbtrpwijfs6,"Venta apartamento de 1 dormitorio, Carrasco Norte",Apartamento,Carrasco Norte,USD,108000,2000,1,1,31.8
 Veocasas,venta,https://veocasas.com/properties/cmqs9ycdm048ey4fvkq6poql4,"Venta Apartamento en Ciudad Vieja , 4 habitaciones 3 baños y gran potencial",Apartamento,Ciudad Vieja,USD,158000,3800,4,3,
 Veocasas,venta,https://veocasas.com/properties/cmmz6j9bt00z0o81ql36587ps,Apartamento en Venta Carrasco Norte 3 Dormitorios con Gran Jardín y 2 Garajes – Edificio Preludio,Apartamento,Carrasco Norte,USD,420000,1111,3,2,
 Veocasas,venta,https://veocasas.com/properties/cmph7ta1r00whx4stjc33w32d,Venta apartamento a estrenar de 2 dormitorios + garaje Barrio Parques - Ref 2211,Apartamento,,USD,450000,12500,2,2,
@@ -71,7 +67,6 @@ Veocasas,venta,https://veocasas.com/properties/cmmf7fsdg0047k77bopvxvmih,Venta A
 Veocasas,venta,https://veocasas.com/properties/cmoblahak26s77meqv7z0dqay,Apartamento al frente 1 dormitorio con garage,Apartamento,,USD,149000,4200,1,1,45.0
 Veocasas,venta,https://veocasas.com/properties/cmli7upcb000iq87dqp2u8313,Pocitos 1 dormitorio con patio venta,,Pocitos,USD,175000,6000,1,1,66.0
 Veocasas,venta,https://veocasas.com/properties/cmmtik1cv03mpwf2nm8uj9mbc,Muy linda casa a estrenar en Barrio Parques - Ref 2137,Casa,,USD,1600000,,4,6,618.0
-Veocasas,venta,https://veocasas.com/properties/cmieonezw00b48jc9x7pg1ybr,Casa en venta 3 dormitorios + servicio Carrasco Sur - Ref 2019,Casa,Carrasco,USD,850000,,3,4,813.0
 Veocasas,venta,https://veocasas.com/properties/cmmf7fstt004bk77but2o1353,Venta de Casa 3 DORMITORIOS Barbacoa  Garaje Malvin,Casa,Malvín,USD,335000,,3,2,210.0
 Veocasas,venta,https://veocasas.com/properties/cmolry45p00gtgvkagpbmswbj,Venta apartamento reciclado de 2 dormitorios y 2 baños en Cordón / Centro - con balcón,Apartamento,Centro,USD,149000,4500,2,2,
 Veocasas,venta,https://veocasas.com/properties/cmogeomkz0dev23vyy6rmri4o,Apartamento 2 Dorm en Pozo | More Pocitos | Gómez Platero | Entrega 2028,Apartamento,Pocitos,USD,263000,,2,2,
@@ -91,65 +86,69 @@ Veocasas,venta,https://veocasas.com/properties/cmln6t40g002l2z4j8p90oh37,Esplén
 Veocasas,venta,https://veocasas.com/properties/cminhbvnt0004bw246bgr7wrg,Venta Terreno Corazón De Pocitos,Terreno,Pocitos,USD,780000,,,,206.0
 Veocasas,venta,https://veocasas.com/properties/cmgfmkqts01ad9d8vbqhxc1n3,Espectacular Casa a la Venta con Renta en San Nicolás,Casa,,USD,1750000,28500,3,3,1050.0
 Veocasas,venta,https://veocasas.com/properties/cmgfaw71m03nihvauo9vxy9em,Elegante casa a la venta en centro de Carrasco,Casa,Carrasco,USD,1390000,,4,5,1220.0
-Veocasas,venta,https://veocasas.com/properties/cmqvajs3v082uwqci4pkqwf8c,venta 1 dormitorio y  patio exclusico,,,USD,202659,5000,1,1,
-Veocasas,venta,https://veocasas.com/properties/cms37t1oe02cnpfvon843bpp3,"Apartamento tipo Casa en Venta en Belvedere, Montevideo",Apartamento,Belvedere,USD,120000,3000,3,1,
+Veocasas,venta,https://veocasas.com/properties/cms64cpzx0112hcc0s67k6p9c,"¡¡¡EXCELENTE PROPIEDAD PADRON UNICO: 3 DORM, FONDO CON BARBACOA, 2 BAÑOS, PADRON UNICO!!!",,,USD,230000,,2,2,389.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw83p90zfbsi7s1653diya,"Apartamentos en venta 1 dormitorio sobre Franzini, Pocitos.",Apartamento,Pocitos,USD,213350,,1,1,59.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw84xr0zkbsi7s02tozax7,Apartamento de 1 dormitorio en piso alto en venta,Apartamento,,USD,155800,,1,1,42.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw86iq0zq7si7szbd1ky4o,Apartamento en venta de 2 dormitorios en parque batlle,Apartamento,Parque Batlle,USD,229500,,2,1,79.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw888d0zvvsi7sjkivpbg9,Apartamento en venta de 1 dormitorio en Malvin,Apartamento,Malvín,USD,152000,,1,1,55.0
 Veocasas,venta,https://veocasas.com/properties/cmgkw88980zvzsi7sw1huwjdy,Venta de apartamento de 1 dormitorio en Malvin,Apartamento,Malvín,USD,153000,,1,1,56.0
-Veocasas,alquiler,https://veocasas.com/properties/cmr60jdfv03qlyqynwqljcd4y,Apartamento a estrenar de 2 dormitorios amoblado en Parque Rodó,Apartamento,Parque Rodó,USD,1990,6900,2,2,101.0
+Veocasas,venta,https://veocasas.com/properties/cmgkw88am0zw3si7s57fjthfk,En venta apartamento de 2 dormitorios en Malvin,Apartamento,Malvín,USD,225000,,2,2,84.0
+Veocasas,venta,https://veocasas.com/properties/cmgkw8ct31073si7s98io1q32,Monoambiente con patio exclusivo en pocitos,Apartamento,Pocitos,USD,159900,,0,1,53.0
+Veocasas,venta,https://veocasas.com/properties/cmgkw8cyi107nsi7so41kpzfe,Apartamento a estrenar de 1 dormitorio con amenities en piso alto en Cordon sobre la calle rodó,Apartamento,Cordón,USD,126750,3611,1,1,44.0
+Veocasas,venta,https://veocasas.com/properties/cmq95eoiq21q9wh3kfn7ujts2,Apartamento de 1 dormitorio a estrenar en venta,Apartamento,,USD,148900,,1,1,43.0
+Veocasas,venta,https://veocasas.com/properties/cmknofyo200e6z6m6fy2ljrv7,Casa de 2 dormitorios con patio a estrenar en Carrasco Norte,Casa,Carrasco Norte,USD,219300,8000,2,1,70.0
+Veocasas,venta,https://veocasas.com/properties/cmlbyv6f100dm62clbzb4efvp,Apartamento de 2 dormitorios a estrenar en Parque Batlle,Apartamento,Parque Batlle,USD,195955,6000,2,1,76.0
+Veocasas,alquiler,https://veocasas.com/properties/cmqdfqh9u3j79erhdqge4kf0h,Alquiler de oficina a pasos de Plaza Matríz,Oficina,,UYU,10000,,,,25.0
+Veocasas,alquiler,https://veocasas.com/properties/cmgkw81oc0z6zsi7sc3a01kxd,Apartamento de 2 dormitorios en alquiler la Blanqueada con amenities,Apartamento,La Blanqueada,UYU,36000,5500,2,1,65.0
+Veocasas,alquiler,https://veocasas.com/properties/cmq5dao3601ekmjkobk6b4p9p,Alquiler Monoambiente en Punta Carretas.,Apartamento,Punta Carretas,UYU,22500,3000,0,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmpwafy8p01z3dzh435gk3ife,Apartamento de 1 dormitorio en alquiler la blanqueada,Apartamento,La Blanqueada,UYU,28500,4500,1,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpz5bkgp010p2498dmnja3t9,Apartamento de 1 dormitorio amoblado en Pocitos,Apartamento,Pocitos,USD,1050,8800,2,2,65.0
+Veocasas,alquiler,https://veocasas.com/properties/cmrw9x6ce07ik10scoqsbwjzp,Venta y Alquiler casa Ph 3 dormitorios + barbacoa en Jardines de Carrasco - Ref 709,Casa,Carrasco,USD,3900,,3,3,352.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpcpw3xr00ir7i7cnhd91vpi,"Apartamento en alquiler en Pocitos 621, en Edificio Torre Sábato, de 3 dormitorios, con terraza y vista despejada",Apartamento,Pocitos,USD,1550,24000,3,3,110.0
 Veocasas,alquiler,https://veocasas.com/properties/cmps04aa200lb118i7peusga5,Apartamento de 1 dormitorio en alquiler,Apartamento,,UYU,28000,4500,1,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmrv6i5lf02wepkh29b1n2opi,Apartamento en alquiler amueblado y equipado en Pocitos 1 dormitorio,Apartamento,Pocitos,UYU,40000,5770,1,1,
-Veocasas,alquiler,https://veocasas.com/properties/cmrpchsty038wiptefucgebel,"Alquiler Apartamento de 1 Dormitorio a Estrenar en Tres Cruces, a 1 Minuto de la Terminal Shopping – $27.000",Apartamento,Tres Cruces,UYU,27000,1500,1,1,64.4
 Veocasas,alquiler,https://veocasas.com/properties/cmmejrhnp00nn126vf2rxtvri,Apartamento de 1 dormitorio en alquiler en Centro,Apartamento,Centro,UYU,33000,14150,1,1,58.0
 Veocasas,alquiler,https://veocasas.com/properties/cmn8k02qb1ssn83bl53dfxsgk,Apartamento en alquiler de 1 dormitorio en Cordón,Apartamento,Cordón,UYU,29700,4500,1,1,45.0
-Veocasas,alquiler,https://veocasas.com/properties/cmrq0pc59013mtc8r1ofjehy4,Totalmente equipado y muy bien puesto,,,USD,1300,13000,2,1,52.0
 Veocasas,alquiler,https://veocasas.com/properties/cmo14qrfq5rdy6mny5bj6s884,Apartamento de 2 dormitorios en alquiler a estrenar,Apartamento,,UYU,42500,6500,2,1,60.0
 Veocasas,alquiler,https://veocasas.com/properties/cmrg0m8c846fadxg0wnvx0vto,Apartamento de 1 dormitorio en Pocitos,Apartamento,Pocitos,USD,1200,5420,1,1,60.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpz5bki8010z2498q6xbs17i,Apartamento de 1 dormitorio con balcón,Apartamento,,UYU,27800,3900,1,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmob4tuit00z0dfl1tvvqh3uq,Apartamento de 1 dormitorio en alquiler con garaje,Apartamento,,UYU,28000,5000,1,1,55.0
 Veocasas,alquiler,https://veocasas.com/properties/cmr9hr3hn04o12h22pixtfl04,Apartamento de 1 dormitorio en piso alto Edificio Flip.,Apartamento,,UYU,27500,3500,1,1,
-Veocasas,alquiler,https://veocasas.com/properties/cmob4tuke00zadfl162puu1g4,Moderno apartamento en alquiler de 1 dormitorio con amenities en Cordón,Apartamento,Cordón,UYU,30800,5000,1,1,55.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpca9x0w00ai59v504vq8xdc,Hermoso apartamento a pasos Tres Cruces y Parque Batlle,Apartamento,Parque Batlle,UYU,27000,10000,2,2,64.0
-Veocasas,alquiler,https://veocasas.com/properties/cmqdfqh9u3j79erhdqge4kf0h,Alquiler de oficina a pasos de Plaza Matríz,Oficina,,UYU,10000,1791,,,25.0
-Veocasas,alquiler,https://veocasas.com/properties/cmgkw81oc0z6zsi7sc3a01kxd,Apartamento de 2 dormitorios en alquiler la Blanqueada con amenities,Apartamento,La Blanqueada,UYU,36000,5500,2,1,65.0
 Veocasas,alquiler,https://veocasas.com/properties/cmr27iea708og18umq6yn6il3,Alquiler De Loft  Al Frente Con Balcón y Garage. Pocitos Nuevo,Garage,Pocitos Nuevo,UYU,32000,4000,0,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmr27iduq08oa18um4kzovlvr,"Alquiler De Apartamento 2 Dormitorios, Amoblado Con Garage, Piso Alto. Edificio JOY Montevideo!",Apartamento,,USD,2500,20000,2,2,
 Veocasas,alquiler,https://veocasas.com/properties/cmr27iczb08ny18umox2t88j5,"Alquiler De Apartamento Amueblado, 2 Dormitorios 2  Baños y Garage, JOY Montevideo",Apartamento,,USD,2500,20000,2,2,
-Veocasas,alquiler,https://veocasas.com/properties/cmr27ibvk08nj18um8fps86n2,"Venta Apartamento en Edificio JOY Montevideo, 3 Dormitorios, 3 Baños, Terraza Y Garage",Apartamento,,USD,2500,29000,3,3,
 Veocasas,alquiler,https://veocasas.com/properties/cmp48k5oy3yz8cmqtx17od1wo,ALQUILER APARTAMENTO 2 DORMITORIOS CON GARAJE EN BE PARK LIFE – FRENTE AL PARQUE RIVERA,Apartamento,,UYU,36000,7500,2,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmpwafy9f01z8dzh44rigg1wp,Alquiler de monoambiente en La Blanqueada,Apartamento,La Blanqueada,UYU,21300,4000,0,1,35.0
 Veocasas,alquiler,https://veocasas.com/properties/cmqr1ucps03fwwqcifg76lwfs,Apartamento amoblado un dormitorio,Apartamento,,UYU,25000,5800,1,1,38.0
 Veocasas,alquiler,https://veocasas.com/properties/cmppxzssd237wx4sttmotcsq4,IMPONENTE LOCAL COMERCIAL  A ESTRENAR,Local Comercial,,UYU,390000,,,,
-Veocasas,alquiler,https://veocasas.com/properties/cmo04jlir03bu23vytob1aj83,Apartamento 1 dormitorio en La Teja,Apartamento,La Teja,UYU,18000,1300,1,1,50.0
 Veocasas,alquiler,https://veocasas.com/properties/cmol4wr6901ngq3izoycb3tre,Casa con destino oficina en alquiler en muy buena zona de Buceo con cocheras,Casa,Buceo,UYU,170000,,,,538.0
 Veocasas,alquiler,https://veocasas.com/properties/cmohanz0945q37meq7pwj4620,Alquilo apartamento 1 dormitorio en Cordon Sur,Apartamento,Cordón Sur,UYU,28000,,1,1,1.0
 Veocasas,alquiler,https://veocasas.com/properties/cmoc2ex7j3uf3g2r1lm3odzph,"Alquiler apartamento 1 dormitorio con terraza en Tres Cruces, Montevideo",Apartamento,Tres Cruces,UYU,30500,4000,1,1,42.0
 Veocasas,alquiler,https://veocasas.com/properties/cmmtcojx41nbmfxew4ry5zuch,Apartamento penthouse en alquiler a estrenar en Pocitos | 2 dormitorios (1 en suite) | Gran terraza,Apartamento,Pocitos,USD,1980,6000,2,2,
 Veocasas,alquiler,https://veocasas.com/properties/cmmtcbjpi02v54zyr89vqrdm9,Monoambiente en venta en Canelones y Bulevar Artigas | 35 m² | Bajos gastos comunes | Excelente ubic,Apartamento,,UYU,22900,2870,0,1,
-Veocasas,alquiler,https://veocasas.com/properties/cmmtb8svi02u24zyrwosg09es,Alquiler Apartamento 2 Dormitorios con Terraza y Parrillero en Pocitos – Garage – Totalmente Equipad,Apartamento,Pocitos,USD,1980,6000,2,2,
 Veocasas,alquiler,https://veocasas.com/properties/cmmc7dzpi0023fb201mjqqinc,Local comercial premium en esquina sobre Rambla Perú – Ideal automotriz y gastronomía,Local Comercial,,USD,8000,11111,,,175.0
 Veocasas,alquiler,https://veocasas.com/properties/cmi7320vl009bcdxpm6e3xywn,Alquiler apartamento 1 dormitorio a estrenar en Pocitos.,Apartamento,Pocitos,UYU,36000,6500,1,1,42.0
-Veocasas,alquiler,https://veocasas.com/properties/cmplvnxa502oqrkg5ldkhz0sj,Divino Apto 2 Dorm con Balcón y Terraza,,,UYU,23500,2400,2,1,
-Veocasas,alquiler,https://veocasas.com/properties/cmqjh480z00gcekkywisasooc,ALQUILER FAMILIA O EMPRESA | AMPLIA CASA EN EL PRADO,Casa,Prado,UYU,69000,,3,1,318.0
+Veocasas,alquiler,https://veocasas.com/properties/cmrmlfjle00uq42mh0qyc6rlk,apartamento tipo casa con patio privado,Apartamento,,UYU,29000,,2,1,
+Veocasas,alquiler,https://veocasas.com/properties/cmrc9yj0b07disffw6cew6v9x,Prox. 18 todo al frente lindo Aire Ropero  Barbacoa bajos gastos op.garaje,,,UYU,24000,3500,1,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmkgj8fet00b8ki1k0yots6xk,Apartamento en alquiler 2 dormitorios en Centro con terraza,Apartamento,Centro,UYU,65000,16000,2,1,143.0
 Veocasas,alquiler,https://veocasas.com/properties/cmkf3rbac00i814m3cz1kun4z,Apartamento de 1 dormitorio en alquiler con garaje,Apartamento,,UYU,30500,4500,1,1,50.0
-Veocasas,alquiler,https://veocasas.com/properties/cml1ysfsn00d5xfqp92zsrix5,Apartamento de estilo en alquiler en centro,Apartamento,Centro,UYU,65000,6000,8,3,200.0
-Veocasas,alquiler,https://veocasas.com/properties/cmmbow2rg01jpfnx1i2xx6jgj,Moderna oficina a pasos del WTC y Montevideo Shopping con garaje,Oficina,,UYU,49000,14000,,,80.0
+Veocasas,alquiler,https://veocasas.com/properties/cms541mbd015b122frltficoe,"ALQUILO APTO. DE 1D A ESTRENAR, LA BLANQUEADA.",,La Blanqueada,UYU,28000,4000,1,1,1000.0
+Veocasas,alquiler,https://veocasas.com/properties/cmrzaoz2w007dpfvo4y3ocwzg,Alquiler apartamento de 2 dormitorios + servicio | Pocitos,Apartamento,Pocitos,UYU,40000,7000,2,2,
+Veocasas,alquiler,https://veocasas.com/properties/cms00sz0e00k630tcisvmbnbk,Apartamento en Centro en alquiler 1 dormitorio,Apartamento,Centro,UYU,27000,8730,1,1,49.0
+Veocasas,alquiler,https://veocasas.com/properties/cmmloznbn00fy3nz79fy8srbe,Apartamento sobre la rambla en alquiler,Apartamento,,USD,2000,34000,3,3,10.0
+Veocasas,alquiler,https://veocasas.com/properties/cmkz3wj7s00crhpgejg7jq2ls,Apartamento en Centro en alquiler 1 dormitorio,Apartamento,Centro,UYU,29500,7500,1,1,48.0
+Veocasas,alquiler,https://veocasas.com/properties/cmplvnxa502oqrkg5ldkhz0sj,Divino Apto 2 Dorm con Balcón y Terraza,,,UYU,23500,2400,2,1,
+Veocasas,alquiler,https://veocasas.com/properties/cmqjh480z00gcekkywisasooc,ALQUILER FAMILIA O EMPRESA | AMPLIA CASA EN EL PRADO,Casa,Prado,UYU,69000,,3,1,318.0
 Veocasas,alquiler,https://veocasas.com/properties/cmr60jdk803rayqynvz8mzuj7,Apartamento de 1 dormitorio amoblado en piso 10 con garaje en Punta Carretas,Apartamento,Punta Carretas,USD,1450,6290,1,1,60.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpqko7de5yqwjwui3eyfxs6j,Alquiler Apartamento a Estrenar - 1 Dormitorio - Garaje incluido - La Blanqueada,Apartamento,La Blanqueada,UYU,28500,4500,1,1,38.0
+Veocasas,alquiler,https://veocasas.com/properties/cmrxk6gy908of10scvwyei86r,Alquiler apartamento 1 dormitorio en Pocitos Nuevo - Ref 39,Apartamento,Pocitos Nuevo,UYU,29000,8000,1,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmpveck3z0bp8jmtova2z6tp4,Alquiler apartamento 1 dormitorio y garage en Parque Rodó,Apartamento,Parque Rodó,UYU,27000,4500,1,1,38.0
 Veocasas,alquiler,https://veocasas.com/properties/cmraav23b05lvfl4qxh1ze4qn,Apartamento de 2 dormitorios en alquiler La Blanqueada,Apartamento,La Blanqueada,UYU,31900,6300,2,1,70.0
 Veocasas,alquiler,https://veocasas.com/properties/cmraav21y05lqfl4quo2vvxkx,Apartamento de 1 dormitorio con garaje en alquiler La Blanqueada,Apartamento,La Blanqueada,UYU,30900,5000,1,1,50.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpi01e4n00x8m3j2ypbo46h7,Apartamento de 2 dormitorios en alquiler Cordón,Apartamento,Cordón,UYU,35500,6000,2,1,65.0
 Veocasas,alquiler,https://veocasas.com/properties/cmqv1s9tl066ty4fv8u6u24jg,Penthouse Vista  Categoria Amplio Loza Aires Barbacoa Seguridad,,,UYU,26500,13300,1,1,300.0
 Veocasas,alquiler,https://veocasas.com/properties/cmmc7knh5000q5k603ad9irm2,"Alquiler Pocitos Apartamento u oficina , 1 dormitorio con garage",Apartamento,Pocitos,UYU,33000,8300,1,1,
-Veocasas,alquiler,https://veocasas.com/properties/cmrpchv9t039ripte1pokqyvl,Alquiler apartamento 1 dormitorio a estrenar con garaje  en Tres Cruces,Apartamento,Tres Cruces,UYU,31500,2100,1,1,64.4
-Veocasas,alquiler,https://veocasas.com/properties/cmrpcgswn02vqiptevckv770f,"Alquiler monoambiente amueblado en Tres Cruces, Excelente ubicación próximo al Shopping y Terminal",Apartamento,Tres Cruces,UYU,23000,4578,0,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmrus83gy00ov13lzajgbgekp,Diamantis 1 dormitorio Garaje Box Semi amueblado Vista Mar,,,UYU,46000,12500,1,1,646.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpziiakr209p12c3omnhzrzj,"ALQUILO MONOAMBIENTE,CENTRO.",Apartamento,Centro,UYU,16000,6500,0,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmrpzm55x027q42mhut1ny95s,Alquiler apartamento 1 dormitorio  y cochera Cordon,Apartamento,Cordón,UYU,27500,5000,1,1,38.0
@@ -157,13 +156,10 @@ Veocasas,alquiler,https://veocasas.com/properties/cmrpyjn34040cipteld8a4qxy,Alqu
 Veocasas,alquiler,https://veocasas.com/properties/cmpz5bkhg010u2498clnkv607,Apartamento de 1 dormitorio amoblado con balcón,Apartamento,,UYU,38400,4540,1,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmraauocy05j6fl4qcfp1ypvb,"Oficina frente a Plaza Independencia, moderno edificio, piso medio, porteria 24/7, aire central.",Oficina,,UYU,16000,8980,,,34.0
 Veocasas,alquiler,https://veocasas.com/properties/cmr0arkxv0d51wqci4888zm52,Alquiler Monoambiente en Pocitos a tres cuadras de la playa,Apartamento,Pocitos,UYU,22800,3500,0,1,26.0
-Veocasas,alquiler,https://veocasas.com/properties/cmrod1dm3022biptevu1nuhha,ALQUILER LOFT CIUDAD VIEJA,,Ciudad Vieja,UYU,22000,3500,1,1,
-Veocasas,alquiler,https://veocasas.com/properties/cmrc9yj0b07disffw6cew6v9x,Prox. 18 todo al frente lindo Aire Ropero  Barbacoa bajos gastos op.garaje,,,UYU,25000,3500,1,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmpeneiyc004646zzby7pp25x,Apto 1 Dorm - Cordón - Amueblado c/Balcón,,Cordón,UYU,35000,3600,1,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmrkpyyc30i1b2h222xxjcfml,Alquiler  De Apartamento Amoblado y Equipado JOY. 1 Dormitorio. Pocitos,Apartamento,Pocitos,USD,1100,10700,1,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmqvcfjlr07nmgjy7ob21wvn7,Apartamento en alquiler en La Teja,Apartamento,La Teja,UYU,20000,,1,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmqul0kyq044k3dm2j3b7cd5b,Alquiler de apartamento de 1 dormitorio en Cordón,Apartamento,Cordón,UYU,28000,5000,1,1,45.0
-Veocasas,alquiler,https://veocasas.com/properties/cmrmlfjle00uq42mh0qyc6rlk,apartamento tipo casa con patio privado,Apartamento,,UYU,29000,,2,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmrmj82ea00ph7y9mtgcv5u71,SE ALQUILA APRTAMENTO A ESTRENAR 2 DORMITORIOS PARQUE BATLLE,,Parque Batlle,USD,39800,6000,2,1,56.0
 Veocasas,alquiler,https://veocasas.com/properties/cmph11t5z00fum3j2840gtxit,Alquiler apartamento dúplex de 1 dormitorio EQUIPADO Pocitos - Ref 2210,Apartamento,Pocitos,USD,750,3530,1,1,
 Veocasas,alquiler,https://veocasas.com/properties/cmrc5c519077b2h22br77mb44,Alquiler Apartamento 1 Dormitorio en La Blanqueada,Apartamento,La Blanqueada,UYU,26000,4300,1,1,
@@ -193,7 +189,11 @@ Veocasas,alquiler,https://veocasas.com/properties/cmqfi75c501iz3soqe2khfcxl,Alqu
 Veocasas,alquiler,https://veocasas.com/properties/cmqj5hjf100s4syo4kfpnnx7e,"Espectacular Penthouse con vista al mar, parrillero y estufa a leña",,,USD,3500,30770,4,2,194.0
 Veocasas,alquiler,https://veocasas.com/properties/cmqgalniy02v511li3b5cir5m,SE ALQUILA APARTAMENTO EN PUNTA GORDA EN IMPECABLE ESTADO,Apartamento,Punta Gorda,UYU,68000,,3,2,188.0
 Veocasas,alquiler,https://veocasas.com/properties/cmmu9lot31pri101o2lt26fpm,Apartamento de 2 dormitorios en alquiler Cordón,Apartamento,Cordón,UYU,33900,6000,2,1,63.0
-Veocasas,alquiler,https://veocasas.com/properties/cmn9zfxv00520nzmp0ezergee,Moderno monoambiente en Cordón aestrenar,Apartamento,Cordón,UYU,22300,5500,0,1,45.0
 Veocasas,alquiler,https://veocasas.com/properties/cmob4tuha00yqdfl1lj8h5gz1,Apartamento de 1 dormitorio en alquiler con amenities,Apartamento,,UYU,26700,4500,1,1,55.0
 Veocasas,alquiler,https://veocasas.com/properties/cmob4tufs00ygdfl1xhjfkr0t,Apartamento de 2 dormitorio en alquiler con amenities,Apartamento,,UYU,33900,5500,2,1,60.0
 Veocasas,alquiler,https://veocasas.com/properties/cmpwafy7u01yydzh4rz99e6kp,Apartamento de 2 dormitorio en alquiler con amenities,Apartamento,,UYU,32700,5500,2,1,70.0
+Veocasas,alquiler,https://veocasas.com/properties/cmqshcljq046o1lbtbxpbgn7v,"Alquiler de apartamento de 1 dormitorio, planta baja- Carrasco Norte",Apartamento,Carrasco Norte,UYU,24500,2000,1,1,31.5
+Veocasas,alquiler,https://veocasas.com/properties/cmqshcgtk045g1lbtb1otdcko,Alquiler de apartamento de 1 dormitorio en Carrasco Norte,Apartamento,Carrasco Norte,UYU,24500,2000,1,1,31.8
+Veocasas,alquiler,https://veocasas.com/properties/cmqrep7od04j4wqcii8it2lii,Alquiler Apartamento de 2 Dormitorios Amoblado en Carrasco,Apartamento,Carrasco,USD,3390,20000,2,2,156.0
+Veocasas,alquiler,https://veocasas.com/properties/cmq86e0fp005p117fo0bzgso5,Alquiler Edificio Corporativo - 900 m² construidos y 40 metros de frente,Edificio,,USD,9000,,,,
+Veocasas,alquiler,https://veocasas.com/properties/cmq0zee7k02535ofta0jh307v,ALQUILO: Apartamento 2 dormitorios con fondo,Apartamento,,UYU,26900,400,2,1,
