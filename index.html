@@ -253,11 +253,6 @@
       </div>
     </div>
 
-    <div class="chart-wrap">
-      <h4>Avisos activos en el tiempo (venta y alquiler)</h4>
-      <canvas id="chartHist" height="70"></canvas>
-    </div>
-
     <div class="cards" style="padding:0 0 20px;">
       <div class="card baja"><div class="n" id="aTotalBajas">-</div><div class="l">posibles ventas/alquileres registradas</div></div>
       <div class="card"><div class="n" id="aDiasProm">-</div><div class="l">días promedio publicado antes de la baja</div></div>
@@ -403,7 +398,7 @@ const PAGE_SIZE = 40;
 
 const state = { operacion: '', portal: '', estado: '', tipo: [], barrio: [], moneda: '', dorm: '', pmin: '', pmax: '', q: '' };
 const analisisState = { operacion: '' };
-let chartTipoInstance = null, chartBarrioInstance = null, chartHistInstance = null;
+let chartTipoInstance = null, chartBarrioInstance = null;
 
 function fmtPrice(row){
   if(!row.precio_valor) return '-';
@@ -567,37 +562,6 @@ function setupChips(containerId, stateKey, targetState, onChange){
   });
 }
 
-function renderChart(){
-  const byDate = {};
-  DATA.historico.forEach(h => {
-    if(!byDate[h.fecha]) byDate[h.fecha] = {nuevos_venta:0, nuevos_alquiler:0, activos_venta:0, activos_alquiler:0};
-    const d = byDate[h.fecha];
-    if(h.operacion === 'venta'){ d.nuevos_venta += h.nuevos; d.activos_venta += h.total_activos; }
-    if(h.operacion === 'alquiler'){ d.nuevos_alquiler += h.nuevos; d.activos_alquiler += h.total_activos; }
-  });
-  const fechas = Object.keys(byDate).sort();
-  const ctx = document.getElementById('chartHist');
-  if(chartHistInstance) chartHistInstance.destroy();
-  chartHistInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: fechas,
-      datasets: [
-        { label: 'Activos - Venta', data: fechas.map(f=>byDate[f].activos_venta), borderColor:'#4f8cff', backgroundColor:'rgba(79,140,255,.1)', tension:.3 },
-        { label: 'Activos - Alquiler', data: fechas.map(f=>byDate[f].activos_alquiler), borderColor:'#63d3a6', backgroundColor:'rgba(99,211,166,.1)', tension:.3 },
-      ]
-    },
-    options: {
-      responsive:true,
-      plugins:{ legend:{ labels:{ color:'#e8ecf4' } } },
-      scales:{
-        x:{ ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } },
-        y:{ ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } }
-      }
-    }
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Análisis: nuevas, posibles ventas/alquileres (bajas) y variación de precio
 // ---------------------------------------------------------------------------
@@ -626,13 +590,26 @@ function fmtMonto(valor, moneda){
 
 function celdaCambioPrecio(r){
   const hist = r.historial_precio;
-  const v = calcVariacionPct(hist);
-  if(v === null || Math.round(v) === 0) return '<span style="color:var(--muted)">Sin cambios</span>';
-  const first = hist[0], last = hist[hist.length - 1];
-  const sube = v > 0;
+  if(!hist || hist.length < 2) return '<span style="color:var(--muted)">Sin cambios</span>';
+
+  // Cadena de valores que realmente cambiaron (se salta entradas repetidas
+  // con el mismo precio, para no mostrar pasos donde no pasó nada).
+  const pasos = [hist[0]];
+  for(let i = 1; i < hist.length; i++){
+    const anterior = Number(pasos[pasos.length - 1].precio_valor);
+    const actual = Number(hist[i].precio_valor);
+    if(!isNaN(actual) && actual !== anterior) pasos.push(hist[i]);
+  }
+  if(pasos.length < 2) return '<span style="color:var(--muted)">Sin cambios</span>';
+
+  const first = pasos[0], last = pasos[pasos.length - 1];
+  const pv = Number(first.precio_valor), cv = Number(last.precio_valor);
+  const sube = cv > pv;
+  const pct = pv ? Math.abs(Math.round(((cv - pv) / pv) * 100)) : 0;
+  const cadena = pasos.map(p => fmtMonto(p.precio_valor, p.precio_moneda)).join(' &rarr; ');
   const tip = 'Historial completo:\n' + hist.map(h => h.fecha + ': ' + fmtMonto(h.precio_valor, h.precio_moneda)).join('\n');
-  return `<span title="${tip}">${fmtMonto(first.precio_valor, first.precio_moneda)} &rarr; ${fmtMonto(last.precio_valor, last.precio_moneda)}</span> `
-    + `<span class="varbadge ${sube ? 'var-sube' : 'var-baja'}">${sube ? '&#9650;' : '&#9660;'}${Math.abs(Math.round(v))}%</span>`;
+  return `<span title="${tip}">${cadena}</span> `
+    + `<span class="varbadge ${sube ? 'var-sube' : 'var-baja'}">${sube ? '&#9650;' : '&#9660;'}${pct}%</span>`;
 }
 
 function topEntries(counts, n){
@@ -765,8 +742,6 @@ function renderTablaBajas(bajas){
 function renderAnalisis(){
   const op = analisisState.operacion;
   const bajas = (DATA.bajas_historico || []).filter(b => !op || b.operacion === op);
-
-  try { renderChart(); } catch(e) { console.error('Error dibujando el grafico de activos en el tiempo:', e); }
 
   document.getElementById('aTotalBajas').textContent = bajas.length;
 
