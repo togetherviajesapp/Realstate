@@ -1,4 +1,5 @@
 [
  {"usuario": "gramirez", "hash": "239cf94ad410766986ec69ea9dee144b04215c7bfb1818669b41bf80789207f0"},
- {"usuario": "vferreira", "hash": "a68a781a974a1fb9668ec17b49424cb42f6fa947cb5b88e0f114931a8c478d45"}
+ {"usuario": "vferreira", "hash": "a68a781a974a1fb9668ec17b49424cb42f6fa947cb5b88e0f114931a8c478d45"},
+ {"usuario": "Prueba", "hash": "2a863e032777b6c06f49383ee3990f0a64740d2b595691bf2c5d02886fc9500a", "ocultar": ["analisis"]}
 ]

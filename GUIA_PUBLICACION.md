@@ -248,6 +248,70 @@ Dos arreglos separados, en capas distintas:
 
 **Importante — esto no garantiza que el muro no vuelva a aparecer.** MercadoLibre puede seguir ajustando su detección en cualquier momento; estas medidas apuntan a hacer la sesión automatizada más parecida a una real, pero no hay forma de asegurar que nunca más bloquee. Si vuelve a pasar, ahora al menos la salvaguarda de `process.py` evita que se pierdan datos, y conviene revisar el log de la corrida (paso "Descargar MercadoLibre" en Actions) para confirmar si es el mismo muro u otra cosa.
 
+## MercadoLibre: nuevo bloqueo distinto y cambio de estrategia (23/7/2026)
+
+La corrida #25 (con las mejoras de sesión/User-Agent/navegación humana de más arriba, ya subidas y activas) volvió a traer 0 avisos de MercadoLibre. Pero esta vez el log mostró algo distinto al "muro de verificación de cuenta" de antes: una página de error genérica de MercadoLibre ("Hubo un error accediendo a esta página...") que apareció ya desde la primera visita a la home, antes de siquiera poder buscar nada. Eso apunta a un bloqueo por IP o por un sistema anti-bot (WAF) que corta el acceso antes de que la sesión o el User-Agent importen — por eso las mejoras de la sección anterior no alcanzaron esta vez.
+
+Se evaluaron opciones pagas (proxy residencial) y gratis para evitar este bloqueo:
+- **Proxy residencial (pago):** funcionaría (~$1-3/GB, costo estimado de centavos por mes dado el bajo volumen de datos), pero se descartó por ahora a pedido del usuario, que prefiere opciones sin costo.
+- **API pública oficial de MercadoLibre (gratis, descartada):** se probó `api.mercadolibre.com/sites/MLU/search` y `/categories` directamente — ambos devuelven `403 Forbidden` ("forbidden" / "PA_UNAUTHORIZED_RESULT_FROM_POLICIES"). MercadoLibre cerró el acceso público a esos endpoints; ya no alcanza con no tener token, hace falta ser cuenta partner autorizada. No es una vía viable.
+- **Espaciar las corridas (evaluada y descartada por ahora):** se había armado una versión del workflow que solo intentaba MercadoLibre los lunes, pero se descartó porque el runner actual usa una IP fija de una red de trabajo, así que la IP no cambia entre corridas de todos modos — espaciar no aportaría gran cosa mientras la IP siga siendo la misma. El workflow se mantiene corriendo MercadoLibre en las 3 corridas semanales (lunes, miércoles y viernes) como antes.
+- **Migrar el runner a la PC personal del usuario, con IP de hogar (en curso):** la idea es que, al ser una IP residencial que puede rotar con el tiempo (a confirmar en la práctica cada cuánto lo hace), cada bloqueo no se acumule para siempre sobre la misma IP. Esto no ataca la detección por patrón de acceso automatizado en sí, pero podría reducir la frecuencia de bloqueos combinado con las mejoras de sesión/User-Agent/navegación humana ya activas en `scraper_ml.py`. Pendiente: documentar y ejecutar el procedimiento de migración del runner.
+
+**Nada de esto garantiza que el bloqueo no vuelva a aparecer** — son medidas para reducir su frecuencia, no una solución definitiva. Mientras tanto, la salvaguarda de `process.py` sigue protegiendo los datos: si MercadoLibre trae 0 avisos en una corrida, se mantienen los últimos avisos buenos en vez de marcarlos como baja.
+
+## Migrar el runner a tu PC personal (procedimiento)
+
+Idea: dejar de correr la tarea desde la PC de trabajo (IP fija) y pasarla a tu PC personal en casa (IP residencial). El plan es **registrar primero el runner nuevo sin dar de baja el viejo**, probarlo, y recién ahí desactivar el de trabajo — así en ningún momento te quedás sin la tarea funcionando si algo sale mal en el medio.
+
+**Paso A — Preparar la PC personal**
+
+1. Instalá **Python** (versión 3.10 o superior): https://www.python.org/downloads/ — durante la instalación, marcá la casilla **"Add python.exe to PATH"** antes de darle a Install (es fácil pasarla por alto y sin eso falla todo lo demás).
+2. Instalá **Git para Windows**: https://git-scm.com/download/win, con las opciones por defecto.
+3. Abrí PowerShell y confirmá que ambos quedaron instalados corriendo:
+   ```
+   python --version
+   git --version
+   ```
+   Si alguno da error de "no se reconoce como comando", cerrá y volvé a abrir PowerShell (a veces el PATH no se actualiza hasta reiniciar la consola); si sigue sin andar, revisá el paso de instalación.
+
+**Paso B — Registrar la PC personal como runner nuevo**
+
+Repetí exactamente los pasos **3.2 y 3.3** de más arriba ("Paso 3 — Instalar el runner en tu computadora"), pero ahora parado en tu PC de casa:
+1. **Settings > Actions > Runners > New self-hosted runner** en el repo.
+2. Elegí Windows x64 y copiá/pegá los comandos que te da GitHub en PowerShell, en una carpeta como `C:\actions-runner`.
+3. Cuando pregunte "Run as service?", respondé **sí**.
+4. Confirmá en **Settings > Actions > Runners** que ahora aparecen **2 runners** activos (el de trabajo y el de casa), ambos "Idle".
+
+Nota: en este punto tenés 2 runners registrados al mismo tiempo — no pasa nada, GitHub simplemente le manda cada corrida a "un" runner disponible (no se duplica el trabajo), así que hasta que no borres el viejo, cualquiera de las dos PCs podría terminar ejecutando la tarea.
+
+**Paso C — Probar que la PC de casa efectivamente corre la tarea**
+
+1. Apagá momentáneamente el runner de la PC de trabajo (para forzar que la tarea caiga sí o sí en la de casa): en esa PC, abrí PowerShell como Administrador, andá a la carpeta del runner (ej. `C:\actions-runner`) y corré:
+   ```
+   .\svc.ps1 stop
+   ```
+2. Desde **Actions > Actualizar inmuebles Montevideo > Run workflow**, disparala a mano.
+3. Andá a **Settings > Actions > Runners** y fijate cuál de los dos runners pasó a estado "Active" (ese es el que está ejecutando la corrida ahora) — debería ser el de casa.
+4. Esperá a que termine y confirmá tilde verde, igual que en el "Paso 4" de más arriba.
+
+**Paso D — Dar de baja el runner de trabajo**
+
+Una vez confirmado que la PC de casa corrió la tarea con éxito:
+1. En la PC de trabajo, en la carpeta del runner (`C:\actions-runner` o donde lo hayas instalado), corré en PowerShell como Administrador:
+   ```
+   .\config.cmd remove --token TOKEN
+   ```
+   (El `TOKEN` te lo da GitHub en **Settings > Actions > Runners**, click en el runner de trabajo > el botón de opciones te muestra el comando de remove con el token ya completado — copialo de ahí en vez de escribirlo a mano.)
+2. Confirmá en **Settings > Actions > Runners** que ya solo aparece el runner de casa.
+3. De ahí en más, la PC de trabajo puede quedar apagada sin afectar la tarea — la que tiene que estar prendida y conectada los lunes, miércoles y viernes a las 10am es la de casa.
+
+**Qué NO hace falta migrar a mano**
+
+- El código del repo: `actions/checkout` lo clona solo en cada corrida, en la PC que sea.
+- Las credenciales de Git para el commit automático: las inyecta el propio workflow en cada corrida (via el token de GitHub Actions), no dependen de la PC.
+- La sesión guardada de MercadoLibre (`~/.ml_scraper_state.json`): no se puede copiar de una PC a otra directamente porque vive en la carpeta de usuario de Windows de cada máquina. En la PC de casa va a arrancar "desde cero" la primera vez (el scraper lo maneja sin problema, ver log "no hay sesion guardada todavia") y de ahí en adelante se va a ir armando su propia sesión persistente en esa máquina.
+
 ## Limitaciones conocidas
 
 - **Gallito bloqueaba los pedidos normales (error 403), incluso desde tu propia conexión** — no era solo un tema de IP de GitHub, sino que el sitio detecta pedidos que no vienen de un navegador real. Por eso Gallito se descarga con un navegador simulado (igual que MercadoLibre).

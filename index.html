@@ -60,6 +60,9 @@
   .badge.Mantenido{background:rgba(79,140,255,.15);color:var(--accent);}
   .badge.Baja{background:rgba(255,107,107,.15);color:var(--danger);}
   .badge.PosibleVenta{background:rgba(255,184,79,.15);color:var(--warn);}
+  .varbadge{padding:1px 6px;border-radius:8px;font-size:10.5px;font-weight:600;margin-left:5px;cursor:help;white-space:nowrap;}
+  .varbadge.var-sube{background:rgba(255,107,107,.15);color:var(--danger);}
+  .varbadge.var-baja{background:rgba(99,211,166,.15);color:var(--accent2);}
   .portalpill{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);border:1px solid var(--border);}
   .chart-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;}
   .empty{padding:40px;text-align:center;color:var(--muted);}
@@ -332,9 +335,16 @@ async function sha256Hex(str){
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+function aplicarRestricciones(){
+  let ocultar = [];
+  try { ocultar = JSON.parse(localStorage.getItem('vf_ocultar') || '[]'); } catch(e){ ocultar = []; }
+  document.getElementById('tabAnalisis').style.display = ocultar.includes('analisis') ? 'none' : '';
+}
+
 function mostrarApp(origen){
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('appContent').style.display = 'block';
+  aplicarRestricciones();
   trackEvent('ingreso', { tipo: origen || 'desconocido' });
   init().catch(e => {
     console.error(e);
@@ -350,10 +360,11 @@ async function intentarLogin(usuario, pass){
     const res = await fetch('usuarios.json?_=' + Date.now());
     const usuarios = await res.json();
     const hash = await sha256Hex(usuario.trim() + ':' + pass);
-    const ok = usuarios.some(u => u.usuario === usuario.trim() && u.hash === hash);
-    if(ok){
+    const u = usuarios.find(u => u.usuario === usuario.trim() && u.hash === hash);
+    if(u){
       localStorage.setItem('vf_auth', 'ok');
       localStorage.setItem('vf_user', usuario.trim());
+      localStorage.setItem('vf_ocultar', JSON.stringify(u.ocultar || []));
       mostrarApp('login_manual');
     } else {
       errorEl.textContent = 'Usuario o contraseña incorrectos.';
@@ -379,6 +390,7 @@ document.addEventListener('click', e => {
   if(e.target && e.target.id === 'btnLogout'){
     localStorage.removeItem('vf_auth');
     localStorage.removeItem('vf_user');
+    localStorage.removeItem('vf_ocultar');
     location.reload();
   }
 });
@@ -511,7 +523,7 @@ function render(){
     html += `<td>${r.dormitorios || '-'}</td>`;
     html += `<td>${r.banos || '-'}</td>`;
     html += `<td>${r.m2 || '-'}</td>`;
-    html += `<td>${fmtPrice(r)}</td>`;
+    html += `<td>${fmtPrice(r)}${badgeVariacion(r)}</td>`;
     html += `<td><span class="badge ${r.estado}">${r.estado}</span></td>`;
     html += `<td>${r.ultima_vez_visto || '-'}</td>`;
     html += r.url && r.url.startsWith('http')
@@ -603,6 +615,20 @@ function calcVariacionPct(hist){
   const last = Number(hist[hist.length-1].precio_valor);
   if(!first || isNaN(first) || isNaN(last)) return null;
   return ((last - first) / first) * 100;
+}
+
+function badgeVariacion(r){
+  const hist = r.historial_precio;
+  const v = calcVariacionPct(hist);
+  if(v === null || Math.round(v) === 0) return '';
+  const sube = v > 0;
+  const tip = 'Historial de precio:\n' + hist.map(h => {
+    const sym = h.precio_moneda === 'USD' ? 'US$' : '$';
+    const n = Number(h.precio_valor);
+    return h.fecha + ': ' + sym + (isNaN(n) ? h.precio_valor : n.toLocaleString('es-UY'));
+  }).join('\n');
+  return ` <span class="varbadge ${sube ? 'var-sube' : 'var-baja'}" title="${tip}">`
+    + (sube ? '&#9650;' : '&#9660;') + Math.abs(Math.round(v)) + '%</span>';
 }
 
 function topEntries(counts, n){
@@ -709,7 +735,7 @@ function renderTablaBajas(bajas){
     html += `<td>${b.operacion}</td>`;
     html += `<td>${b.tipo_inmueble || '-'}</td>`;
     html += `<td>${b.barrio || '-'}</td>`;
-    html += `<td>${fmtPrice(b)}</td>`;
+    html += `<td>${fmtPrice(b)}${badgeVariacion(b)}</td>`;
     html += `<td>${b.dias_publicado ?? '-'}</td>`;
     html += `<td>${b.fecha_baja || '-'}</td>`;
     html += `<td><span class="badge PosibleVenta">Posible ${b.operacion === 'alquiler' ? 'alquiler' : 'venta'}</span></td>`;
@@ -740,6 +766,9 @@ function renderAnalisis(){
 }
 
 function switchTab(tab){
+  let ocultar = [];
+  try { ocultar = JSON.parse(localStorage.getItem('vf_ocultar') || '[]'); } catch(e){ ocultar = []; }
+  if(tab === 'analisis' && ocultar.includes('analisis')) tab = 'buscador';
   document.getElementById('viewBuscador').classList.toggle('active', tab === 'buscador');
   document.getElementById('viewAnalisis').classList.toggle('active', tab === 'analisis');
   document.getElementById('tabBuscador').classList.toggle('active', tab === 'buscador');
