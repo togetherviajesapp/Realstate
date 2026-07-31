@@ -673,6 +673,7 @@ function listarCambiosPrecio(){
         precioAnteriorValor: prev.precio_valor, precioAnteriorMoneda: prev.precio_moneda,
         precioNuevoValor: cur.precio_valor, precioNuevoMoneda: cur.precio_moneda,
         fecha: cur.fecha, variacion: ((cv - pv) / pv) * 100, estado: estadoLabel,
+        url: item.url, publicadoDesde: item.primera_vez_visto,
       });
     }
   }
@@ -688,10 +689,10 @@ function renderTablaCambiosPrecio(op){
 
   let html = '<table><thead><tr>'
     + '<th>Portal</th><th>Op.</th><th>Tipo</th><th>Barrio</th><th>Precio anterior</th>'
-    + '<th>Precio nuevo</th><th>Variación</th><th>Fecha del cambio</th><th>Estado</th></tr></thead><tbody>';
+    + '<th>Precio nuevo</th><th>Variación</th><th>Fecha del cambio</th><th>Publicado desde</th><th>Estado</th><th>Aviso</th></tr></thead><tbody>';
 
   if(recientes.length === 0){
-    html += '<tr><td colspan="9"><div class="empty">Todavía no hay cambios de precio registrados con este filtro. Esto se arma corrida a corrida a partir de ahora.</div></td></tr>';
+    html += '<tr><td colspan="11"><div class="empty">Todavía no hay cambios de precio registrados con este filtro. Esto se arma corrida a corrida a partir de ahora.</div></td></tr>';
   }
 
   recientes.forEach(c => {
@@ -705,7 +706,11 @@ function renderTablaCambiosPrecio(op){
     html += `<td>${fmtMonto(c.precioNuevoValor, c.precioNuevoMoneda)}</td>`;
     html += `<td><span class="varbadge ${sube ? 'var-sube' : 'var-baja'}">${sube ? '&#9650;' : '&#9660;'}${Math.abs(Math.round(c.variacion))}%</span></td>`;
     html += `<td>${c.fecha || '-'}</td>`;
+    html += `<td>${c.publicadoDesde || '-'}</td>`;
     html += `<td>${c.estado === 'Activo' ? '<span class="badge Mantenido">Activo</span>' : '<span class="badge PosibleVenta">Posible baja</span>'}</td>`;
+    html += c.url && c.url.startsWith('http')
+      ? `<td><a class="rowlink" href="${c.url}" target="_blank" rel="noopener">Ver &rarr;</a></td>`
+      : `<td><span style="color:var(--muted)" title="Este portal no expuso un link directo para este aviso">Sin link</span></td>`;
     html += '</tr>';
   });
   html += '</tbody></table>';
