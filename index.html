@@ -277,8 +277,8 @@
     </div>
 
     <div class="chart-wrap">
-      <h4>Variación de precio vs. tiempo publicado (cada punto es un aviso que cambió de precio)</h4>
-      <canvas id="chartVariacion" height="90"></canvas>
+      <h4>Cambios de precio recientes</h4>
+      <div id="tablaCambiosPrecioWrap"></div>
     </div>
 
     <div class="chart-wrap">
@@ -403,7 +403,7 @@ const PAGE_SIZE = 40;
 
 const state = { operacion: '', portal: '', estado: '', tipo: [], barrio: [], moneda: '', dorm: '', pmin: '', pmax: '', q: '' };
 const analisisState = { operacion: '' };
-let chartVariacionInstance = null, chartTipoInstance = null, chartBarrioInstance = null, chartHistInstance = null;
+let chartTipoInstance = null, chartBarrioInstance = null, chartHistInstance = null;
 
 function fmtPrice(row){
   if(!row.precio_valor) return '-';
@@ -508,10 +508,10 @@ function render(){
   cols.forEach(([key,label]) => {
     html += `<th data-key="${key}">${label}${sortKey===key ? (sortDir===1?' ▲':' ▼') : ''}</th>`;
   });
-  html += '<th>Aviso</th></tr></thead><tbody>';
+  html += '<th>Cambio de precio</th><th>Aviso</th></tr></thead><tbody>';
 
   if(pageRows.length === 0){
-    html += `<tr><td colspan="${cols.length+1}"><div class="empty">Sin resultados con estos filtros</div></td></tr>`;
+    html += `<tr><td colspan="${cols.length+2}"><div class="empty">Sin resultados con estos filtros</div></td></tr>`;
   }
 
   pageRows.forEach(r => {
@@ -523,9 +523,10 @@ function render(){
     html += `<td>${r.dormitorios || '-'}</td>`;
     html += `<td>${r.banos || '-'}</td>`;
     html += `<td>${r.m2 || '-'}</td>`;
-    html += `<td>${fmtPrice(r)}${badgeVariacion(r)}</td>`;
+    html += `<td>${fmtPrice(r)}</td>`;
     html += `<td><span class="badge ${r.estado}">${r.estado}</span></td>`;
     html += `<td>${r.ultima_vez_visto || '-'}</td>`;
+    html += `<td>${celdaCambioPrecio(r)}</td>`;
     html += r.url && r.url.startsWith('http')
       ? `<td><a class="rowlink" href="${r.url}" target="_blank" rel="noopener">Ver &rarr;</a></td>`
       : `<td><span style="color:var(--muted)" title="Este portal no expuso un link directo para este aviso">Sin link</span></td>`;
@@ -617,18 +618,21 @@ function calcVariacionPct(hist){
   return ((last - first) / first) * 100;
 }
 
-function badgeVariacion(r){
+function fmtMonto(valor, moneda){
+  const sym = moneda === 'USD' ? 'US$' : '$';
+  const n = Number(valor);
+  return sym + (isNaN(n) ? valor : n.toLocaleString('es-UY'));
+}
+
+function celdaCambioPrecio(r){
   const hist = r.historial_precio;
   const v = calcVariacionPct(hist);
-  if(v === null || Math.round(v) === 0) return '';
+  if(v === null || Math.round(v) === 0) return '<span style="color:var(--muted)">Sin cambios</span>';
+  const first = hist[0], last = hist[hist.length - 1];
   const sube = v > 0;
-  const tip = 'Historial de precio:\n' + hist.map(h => {
-    const sym = h.precio_moneda === 'USD' ? 'US$' : '$';
-    const n = Number(h.precio_valor);
-    return h.fecha + ': ' + sym + (isNaN(n) ? h.precio_valor : n.toLocaleString('es-UY'));
-  }).join('\n');
-  return ` <span class="varbadge ${sube ? 'var-sube' : 'var-baja'}" title="${tip}">`
-    + (sube ? '&#9650;' : '&#9660;') + Math.abs(Math.round(v)) + '%</span>';
+  const tip = 'Historial completo:\n' + hist.map(h => h.fecha + ': ' + fmtMonto(h.precio_valor, h.precio_moneda)).join('\n');
+  return `<span title="${tip}">${fmtMonto(first.precio_valor, first.precio_moneda)} &rarr; ${fmtMonto(last.precio_valor, last.precio_moneda)}</span> `
+    + `<span class="varbadge ${sube ? 'var-sube' : 'var-baja'}">${sube ? '&#9650;' : '&#9660;'}${Math.abs(Math.round(v))}%</span>`;
 }
 
 function topEntries(counts, n){
@@ -678,55 +682,67 @@ function renderAnalisisCharts(bajas){
   return { topTipos, topBarrios };
 }
 
-function renderAnalisisVariacion(op){
-  const puntosActivos = [];
-  const puntosBajas = [];
-
-  DATA.listado.forEach(r => {
-    if(op && r.operacion !== op) return;
-    const v = calcVariacionPct(r.historial_precio);
-    if(v === null) return;
-    const dias = diasDesde(r.primera_vez_visto, DATA.actualizado);
-    if(dias === null) return;
-    puntosActivos.push({ x: dias, y: Math.round(v*10)/10 });
-  });
-
-  DATA.bajas_historico.forEach(b => {
-    if(op && b.operacion !== op) return;
-    const v = calcVariacionPct(b.historial_precio);
-    if(v === null) return;
-    if(b.dias_publicado === null || b.dias_publicado === undefined) return;
-    puntosBajas.push({ x: b.dias_publicado, y: Math.round(v*10)/10 });
-  });
-
-  if(chartVariacionInstance) chartVariacionInstance.destroy();
-  chartVariacionInstance = new Chart(document.getElementById('chartVariacion'), {
-    type: 'scatter',
-    data: {
-      datasets: [
-        { label: 'Activos (cambiaron de precio)', data: puntosActivos, backgroundColor: 'rgba(79,140,255,.7)' },
-        { label: 'Posibles ventas/alquileres (cambiaron de precio)', data: puntosBajas, backgroundColor: 'rgba(255,184,79,.8)' },
-      ]
-    },
-    options: {
-      responsive:true,
-      plugins:{ legend:{ labels:{ color:'#e8ecf4' } } },
-      scales:{
-        x:{ title:{ display:true, text:'Días desde la primera publicación', color:'#8b93a7' }, ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } },
-        y:{ title:{ display:true, text:'Variación de precio (%)', color:'#8b93a7' }, ticks:{ color:'#8b93a7' }, grid:{ color:'#2a3247' } }
-      }
+function listarCambiosPrecio(){
+  const cambios = [];
+  function agregar(item, estadoLabel){
+    const hist = item.historial_precio;
+    if(!hist || hist.length < 2) return;
+    for(let i = 1; i < hist.length; i++){
+      const prev = hist[i-1], cur = hist[i];
+      const pv = Number(prev.precio_valor), cv = Number(cur.precio_valor);
+      if(!pv || isNaN(pv) || isNaN(cv) || pv === cv) continue;
+      cambios.push({
+        portal: item.portal, operacion: item.operacion, tipo: item.tipo_inmueble, barrio: item.barrio,
+        precioAnteriorValor: prev.precio_valor, precioAnteriorMoneda: prev.precio_moneda,
+        precioNuevoValor: cur.precio_valor, precioNuevoMoneda: cur.precio_moneda,
+        fecha: cur.fecha, variacion: ((cv - pv) / pv) * 100, estado: estadoLabel,
+      });
     }
+  }
+  (DATA.listado || []).forEach(r => agregar(r, 'Activo'));
+  (DATA.bajas_historico || []).forEach(b => agregar(b, 'Posible baja'));
+  return cambios.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+
+function renderTablaCambiosPrecio(op){
+  let cambios = listarCambiosPrecio();
+  if(op) cambios = cambios.filter(c => c.operacion === op);
+  const recientes = cambios.slice(0, 150);
+
+  let html = '<table><thead><tr>'
+    + '<th>Portal</th><th>Op.</th><th>Tipo</th><th>Barrio</th><th>Precio anterior</th>'
+    + '<th>Precio nuevo</th><th>Variación</th><th>Fecha del cambio</th><th>Estado</th></tr></thead><tbody>';
+
+  if(recientes.length === 0){
+    html += '<tr><td colspan="9"><div class="empty">Todavía no hay cambios de precio registrados con este filtro. Esto se arma corrida a corrida a partir de ahora.</div></td></tr>';
+  }
+
+  recientes.forEach(c => {
+    const sube = c.variacion > 0;
+    html += '<tr>';
+    html += `<td><span class="portalpill">${c.portal}</span></td>`;
+    html += `<td>${c.operacion}</td>`;
+    html += `<td>${c.tipo || '-'}</td>`;
+    html += `<td>${c.barrio || '-'}</td>`;
+    html += `<td>${fmtMonto(c.precioAnteriorValor, c.precioAnteriorMoneda)}</td>`;
+    html += `<td>${fmtMonto(c.precioNuevoValor, c.precioNuevoMoneda)}</td>`;
+    html += `<td><span class="varbadge ${sube ? 'var-sube' : 'var-baja'}">${sube ? '&#9650;' : '&#9660;'}${Math.abs(Math.round(c.variacion))}%</span></td>`;
+    html += `<td>${c.fecha || '-'}</td>`;
+    html += `<td>${c.estado === 'Activo' ? '<span class="badge Mantenido">Activo</span>' : '<span class="badge PosibleVenta">Posible baja</span>'}</td>`;
+    html += '</tr>';
   });
+  html += '</tbody></table>';
+  document.getElementById('tablaCambiosPrecioWrap').innerHTML = html;
 }
 
 function renderTablaBajas(bajas){
   const recientes = [...bajas].sort((a,b) => (b.fecha_baja||'').localeCompare(a.fecha_baja||'')).slice(0, 150);
   let html = '<table><thead><tr>'
-    + '<th>Portal</th><th>Op.</th><th>Tipo</th><th>Barrio</th><th>Último precio</th>'
+    + '<th>Portal</th><th>Op.</th><th>Tipo</th><th>Barrio</th><th>Último precio</th><th>Cambio de precio</th>'
     + '<th>Días publicado</th><th>Fecha de baja</th><th>Estado</th></tr></thead><tbody>';
 
   if(recientes.length === 0){
-    html += '<tr><td colspan="8"><div class="empty">Todavía no hay bajas registradas con este filtro. Este historial se arma corrida a corrida a partir de ahora.</div></td></tr>';
+    html += '<tr><td colspan="9"><div class="empty">Todavía no hay bajas registradas con este filtro. Este historial se arma corrida a corrida a partir de ahora.</div></td></tr>';
   }
 
   recientes.forEach(b => {
@@ -735,7 +751,8 @@ function renderTablaBajas(bajas){
     html += `<td>${b.operacion}</td>`;
     html += `<td>${b.tipo_inmueble || '-'}</td>`;
     html += `<td>${b.barrio || '-'}</td>`;
-    html += `<td>${fmtPrice(b)}${badgeVariacion(b)}</td>`;
+    html += `<td>${fmtPrice(b)}</td>`;
+    html += `<td>${celdaCambioPrecio(b)}</td>`;
     html += `<td>${b.dias_publicado ?? '-'}</td>`;
     html += `<td>${b.fecha_baja || '-'}</td>`;
     html += `<td><span class="badge PosibleVenta">Posible ${b.operacion === 'alquiler' ? 'alquiler' : 'venta'}</span></td>`;
@@ -761,7 +778,7 @@ function renderAnalisis(){
   document.getElementById('aTopTipo').textContent = topTipos.length ? topTipos[0][0] : '-';
   document.getElementById('aTopBarrio').textContent = topBarrios.length ? topBarrios[0][0] : '-';
 
-  renderAnalisisVariacion(op);
+  renderTablaCambiosPrecio(op);
   renderTablaBajas(bajas);
 }
 
