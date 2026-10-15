@@ -132,6 +132,15 @@
   </div>
 </header>
 
+<div class="disclaimer" id="avisoCobertura" style="margin:12px 16px;">
+  <b>Cobertura parcial:</b> esta página <b>no muestra el total de avisos</b> de cada portal. Por cada portal se relevan
+  solo las primeras páginas de resultados (InfoCasas, Gallito y MercadoLibre: unas pocas páginas por operación; Casasymas y
+  Veocasas: según el límite configurado), por lo que quedan avisos publicados que acá no aparecen. Un aviso que no figura
+  no significa que no exista en el portal, y los &ldquo;nuevos&rdquo; y &ldquo;bajas&rdquo; son aproximados: un aviso puede
+  salir del relevamiento solo porque dejó de caer en esas primeras páginas. Para una búsqueda completa, consultá el portal directamente.
+</div>
+
+
 <div id="viewBuscador" class="view active">
   <div class="cards">
     <div class="card"><div class="n" id="cActivos">-</div><div class="l">avisos activos</div></div>
@@ -378,7 +387,16 @@ document.getElementById('loginForm').addEventListener('submit', e => {
 });
 
 if(localStorage.getItem('vf_auth') === 'ok'){
-  mostrarApp('sesion_guardada');
+  // Revalida que el usuario guardado siga habilitado en usuarios.json (permite bloquear sesiones ya abiertas)
+  fetch('usuarios.json?_=' + Date.now()).then(r => r.json()).then(lista => {
+    const actual = localStorage.getItem('vf_user');
+    if(lista.some(x => x.usuario === actual)){
+      mostrarApp('sesion_guardada');
+    } else {
+      localStorage.removeItem('vf_auth'); localStorage.removeItem('vf_user'); localStorage.removeItem('vf_ocultar');
+      location.reload();
+    }
+  }).catch(() => mostrarApp('sesion_guardada'));
 }
 
 document.addEventListener('click', e => {
